@@ -208,27 +208,27 @@
                     initMap(); // Inicia el mapa después de hacer login
                 })
                 .catch((error) => {
-                    document.getElementById('error-message').innerText = "Error: " + error.message;
+                    document.getElementById('error-message').innerText = error.message;
                 });
         }
 
-        // Registra un nuevo usuario
+        // Registro de usuario
         function register() {
             const email = document.getElementById('new-email').value;
             const password = document.getElementById('new-password').value;
 
             auth.createUserWithEmailAndPassword(email, password)
                 .then(() => {
-                    showLogin(); // Después de registrar, redirige a login
+                    showLogin();
                 })
                 .catch((error) => {
-                    document.getElementById('register-error-message').innerText = "Error: " + error.message;
+                    document.getElementById('register-error-message').innerText = error.message;
                 });
         }
 
-        // Calcula la distancia entre dos puntos geográficos
+        // Calcula la distancia entre dos coordenadas
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radio de la tierra en km
+            const R = 6371; // Radio de la Tierra en km
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -240,6 +240,7 @@
 
         // Inicializa el mapa
         function initMap() {
+            console.log('Iniciando mapa...');
             const mapOptions = {
                 center: { lat: -33.4489, lng: -70.6693 }, // Coordenadas iniciales
                 zoom: 12,
@@ -253,10 +254,14 @@
                     const userLat = position.coords.latitude;
                     const userLon = position.coords.longitude;
 
+                    console.log('Ubicación del usuario:', userLat, userLon);
+
                     map.setCenter({ lat: userLat, lng: userLon });
 
                     // Cargar los centros de reciclaje
                     loadCenters(map, userLat, userLon, infoWindow);
+                }, function() {
+                    alert("No se pudo obtener la ubicación.");
                 });
             } else {
                 alert("La geolocalización no está disponible.");
@@ -265,8 +270,9 @@
 
         // Carga los centros desde Firebase
         function loadCenters(map, userLat, userLon, infoWindow) {
+            console.log('Cargando centros de reciclaje...');
             database.ref().once('value').then(snapshot => {
-                const data = snapshot.val();  // Obtenemos todos los centros
+                const data = snapshot.val();
                 if (data) {
                     for (const key in data) {
                         const center = data[key];
@@ -274,14 +280,16 @@
                         const centerLon = center.Longitud;
                         const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
-                        if (distance <= 10) {  // Solo muestra los centros dentro de 10 km
+                        console.log(`Centro ${center.Administrador} a ${distance} km`);
+
+                        if (distance <= 10) {
                             const marker = new google.maps.Marker({
                                 position: { lat: centerLat, lng: centerLon },
                                 map: map,
                                 title: center.Administrador,
                                 icon: {
-                                    url: "/images/environment-15-512-_1_.png", // Icono personalizado
-                                    scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
+                                    url: "/images/environment-15-512-_1_.png",
+                                    scaledSize: new google.maps.Size(30, 30)
                                 }
                             });
 
@@ -313,10 +321,10 @@
 
         // Aplica el filtro de materiales
         function applyFilter() {
-            const filter = document.getElementById('material-filter').value.toLowerCase();  // Obtenemos el material seleccionado
+            const filter = document.getElementById('material-filter').value.toLowerCase();
             markers.forEach(marker => {
-                const centerMaterial = marker.center.Material.toLowerCase();  // Material de ese centro
-                if (!filter || centerMaterial === filter) {  // Si no hay filtro o el material coincide
+                const centerMaterial = marker.center.Material.toLowerCase();
+                if (!filter || centerMaterial === filter) {
                     marker.setVisible(true);
                 } else {
                     marker.setVisible(false);
@@ -324,10 +332,10 @@
             });
         }
 
-        // Manejo de errores al cargar imágenes
+        // Manejo de errores de imágenes
         function handleImageError(image) {
             image.onerror = null;
-            image.src = "/images/placeholder.svg"; // Imagen por defecto en caso de error
+            image.src = "/images/placeholder.svg";
         }
     </script>
 </body>
