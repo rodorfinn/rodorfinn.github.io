@@ -33,6 +33,38 @@
             font-size: 24px;
         }
 
+        /* Estilos para los formularios de inicio de sesión y registro */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-form input {
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .login-form button {
+            padding: 10px;
+            background-color: #43a047;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .login-form button:hover {
+            background-color: #388e3c;
+        }
+
         /* Contenedor de la barra de búsqueda */
         .search-bar-container {
             position: absolute;
@@ -75,6 +107,13 @@
         .gm-style-iw {
             max-width: 300px !important;
         }
+
+        /* Estilo para el mensaje de error */
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -84,8 +123,28 @@
         <h1>RecyClac</h1>
     </div>
 
+    <!-- Formulario de inicio de sesión -->
+    <div id="login-form" class="login-form">
+        <h2>Iniciar sesión</h2>
+        <input type="text" id="username" placeholder="Usuario" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <button onclick="login()">Iniciar sesión</button>
+        <p>Aún no tienes cuenta? <a href="javascript:void(0);" onclick="showRegister()">Regístrate</a></p>
+        <div id="error-message" class="error-message"></div>
+    </div>
+
+    <!-- Formulario de registro -->
+    <div id="register-form" class="login-form" style="display: none;">
+        <h2>Registrar cuenta</h2>
+        <input type="text" id="new-username" placeholder="Usuario" required>
+        <input type="password" id="new-password" placeholder="Contraseña" required>
+        <button onclick="register()">Registrarse</button>
+        <p>Ya tienes cuenta? <a href="javascript:void(0);" onclick="showLogin()">Iniciar sesión</a></p>
+        <div id="register-error-message" class="error-message"></div>
+    </div>
+
     <!-- Barra de búsqueda -->
-    <div class="search-bar-container">
+    <div class="search-bar-container" style="display: none;">
         <input type="text" id="search-bar" placeholder="Buscar centro de reciclaje...">
         <select id="material-filter">
             <option value="">Todos los materiales</option>
@@ -104,6 +163,7 @@
 
     <!-- Scripts de Firebase y Google Maps -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTPwPwaQEFcpKg0aBWVEeWmcz_xIXXZug&callback=initMap" async defer></script>
 
@@ -120,8 +180,51 @@
         };
 
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const database = firebase.database();
         let markers = [];
+
+        // Muestra el formulario de inicio de sesión
+        function showLogin() {
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('register-form').style.display = 'none';
+        }
+
+        // Muestra el formulario de registro
+        function showRegister() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+        }
+
+        // Inicia sesión
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            auth.signInWithEmailAndPassword(username + "@example.com", password)
+                .then(() => {
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('search-bar-container').style.display = 'block'; // Muestra la barra de búsqueda
+                    initMap(); // Inicia el mapa después de hacer login
+                })
+                .catch((error) => {
+                    document.getElementById('error-message').innerText = "Error: " + error.message;
+                });
+        }
+
+        // Registra un nuevo usuario
+        function register() {
+            const username = document.getElementById('new-username').value;
+            const password = document.getElementById('new-password').value;
+
+            auth.createUserWithEmailAndPassword(username + "@example.com", password)
+                .then(() => {
+                    showLogin(); // Muestra el formulario de login después de registro exitoso
+                })
+                .catch((error) => {
+                    document.getElementById('register-error-message').innerText = "Error: " + error.message;
+                });
+        }
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -171,7 +274,6 @@
         function loadCenters(map, userLat, userLon, infoWindow) {
             database.ref().once('value').then(snapshot => {
                 const data = snapshot.val();
-                console.log('Datos de los centros:', data); // Agregar esto para verificar si se cargan los datos
                 for (const key in data) {
                     const center = data[key];
                     const centerLat = center.Latitud;
@@ -179,7 +281,6 @@
                     const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
                     if (distance <= 10) {
-                        console.log('Marcador para', center.Administrador, 'con coordenadas', centerLat, centerLon); // Verificar coordenadas
                         const marker = new google.maps.Marker({
                             position: { lat: centerLat, lng: centerLon },
                             map: map,
