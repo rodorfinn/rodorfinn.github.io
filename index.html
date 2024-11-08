@@ -78,6 +78,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             display: flex;
             gap: 5px;
+            align-items: center;
         }
 
         .search-bar-container input, .search-bar-container select, .search-bar-container button {
@@ -138,15 +139,15 @@
         <div id="register-error-message" class="error-message"></div>
     </div>
 
-    <!-- Barra de búsqueda -->
-    <div class="search-bar-container" style="display: none;">
-        <input type="text" id="search-bar" placeholder="Buscar centro de reciclaje...">
-        <select id="material-filter">
+    <!-- Barra de búsqueda y filtro -->
+    <div id="search-bar-container" class="search-bar-container" style="display: none;">
+        <input type="text" id="search-bar" placeholder="Buscar centro de reciclaje..." oninput="applyFilter()">
+        <select id="material-filter" onchange="applyFilter()">
             <option value="">Todos los materiales</option>
             <option value="vidrio">Vidrio</option>
+            <option value="plástico">Plástico</option>
             <option value="papel">Papel</option>
             <option value="cartón">Cartón</option>
-            <option value="plástico">Plástico</option>
             <option value="metal">Metal</option>
             <option value="celular">Celular</option>
             <option value="pilas">Pilas</option>
@@ -178,6 +179,7 @@
         const auth = firebase.auth();
         const database = firebase.database();
         let markers = [];
+        let allCenters = [];
 
         // Muestra el formulario de inicio de sesión
         function showLogin() {
@@ -214,23 +216,11 @@
 
             auth.createUserWithEmailAndPassword(email, password)
                 .then(() => {
-                    showLogin(); // Después de registrar, redirige a login
+                    showLogin();
                 })
                 .catch((error) => {
                     document.getElementById('register-error-message').innerText = "Error: " + error.message;
                 });
-        }
-
-        // Calcula la distancia entre dos puntos geográficos
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radio de la Tierra en km
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c; // Distancia en km
         }
 
         // Inicializa el mapa
@@ -265,13 +255,14 @@
             database.ref().once('value').then(snapshot => {
                 const data = snapshot.val();
                 if (data) {
+                    allCenters = [];
                     for (const key in data) {
                         const center = data[key];
                         const centerLat = center.Latitud;
                         const centerLon = center.Longitud;
                         const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
-                        if (distance <= 10) {
+                        if (distance <= 10) {  // Mostrar centros a menos de 10 km
                             const marker = new google.maps.Marker({
                                 position: { lat: centerLat, lng: centerLon },
                                 map: map,
@@ -317,16 +308,91 @@
                                 infoWindow.setContent(contentString);
                                 infoWindow.open(map, marker);
                             });
+
+                            allCenters.push(center);
                         }
                     }
                 }
             });
         }
 
-        // Manejar errores de carga de imágenes
-        function handleImageError(image) {
-            image.onerror = null;
-            image.src = "/images/placeholder.png"; // Imagen por defecto
+        // Calcular distancia entre dos puntos geográficos (en km)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la Tierra en km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Distancia en km
+        }
+
+        // Aplicar filtro de búsqueda
+        function applyFilter() {
+            const searchTerm = document.getElementById('search-bar').value.toLowerCase();
+            const materialFilter = document.getElementById('material-filter').value.toLowerCase();
+            
+            // Filtrar los centros que coincidan con el término de búsqueda y el material
+            const filteredCenters = allCenters.filter(center => {
+                const matchesSearchTerm = center.Administrador.toLowerCase().includes(searchTerm) || 
+                                          center.Dirección.toLowerCase().includes(searchTerm);
+                const matchesMaterial = materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
+
+                return matchesSearchTerm && matchesMaterial;
+            });
+
+            // Borrar los marcadores actuales
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+
+            // Añadir los marcadores filtrados
+            filteredCenters.forEach(center => {
+                const marker = new google.maps.Marker({
+                    position: { lat: center.Latitud, lng: center.Longitud },
+                    map: map,
+                    title: center.Administrador,
+                    icon: {
+                        url: "/images/environment-15-512-_1_.png", 
+                        scaledSize: new google.maps.Size(30, 30)
+                    }
+                });
+
+                marker.center = center;
+                markers.push(marker);
+
+                google.maps.event.addListener(marker, 'click', function() {
+                    let imageUrl;
+
+                    if (center.Material.includes('celular')) {
+                        imageUrl = "/images/celular.png";
+                    } else if (center.Material.includes(',')) {
+                        imageUrl = "/images/reciclaje.png";
+                    } else if (center.Material === 'Vidrio') {
+                        imageUrl = "/images/vidrio.png";
+                    } else if (center.Material === 'Plástico') {
+                        imageUrl = "/images/plastico.png";
+                    } else if (center.Material === 'Papel') {
+                        imageUrl = "/images/papel.png";
+                    } else if (center.Material === 'Metal') {
+                        imageUrl = "/images/metal.png";
+                    } else {
+                        imageUrl = "/images/placeholder.png";
+                    }
+
+                    const contentString = `
+                        <div>
+                            <h3>${center.Administrador}</h3>
+                            <p><strong>Dirección:</strong> ${center.Dirección}</p>
+                            <p><strong>Material:</strong> ${center.Material}</p>
+                            <img src="${imageUrl}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;" onerror="handleImageError(this)">
+                        </div>
+                    `;
+                    
+                    infoWindow.setContent(contentString);
+                    infoWindow.open(map, marker);
+                });
+            });
         }
     </script>
 </body>
