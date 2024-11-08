@@ -322,7 +322,7 @@
                             const distance = centersWithDistance[i].distance;
 
                             const li = document.createElement('li');
-                            li.innerHTML = ${center.Administrador} - ${center.Dirección} <span class="distance">(${distance.toFixed(2)} km)</span>;
+                            li.innerHTML = `${center.Administrador} - ${center.Dirección} <span class="distance">(${distance.toFixed(2)} km)</span>`;
                             centerList.appendChild(li);
                         }
                     }
@@ -370,15 +370,14 @@
                 google.maps.event.addListener(marker, 'click', function() {
                     const materialImage = center.Material.toLowerCase() + '.png';
                     const contentString = 
-                        <div>
+                        `<div>
                             <h3>${center.Administrador}</h3>
                             <p><strong>Dirección:</strong> ${center.Dirección}</p>
                             <p><strong>Material:</strong> ${center.Material}</p>
                             <img src="/images/${materialImage}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
                             <h4>Vista en 360 grados:</h4>
                             <div id="street-view-container"></div>
-                        </div>
-                    ;
+                        </div>`;
                     infoWindow.setContent(contentString);
                     infoWindow.open(map, marker);
 
