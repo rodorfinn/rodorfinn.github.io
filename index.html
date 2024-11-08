@@ -88,6 +88,18 @@
             padding: 5px;
             font-size: 16px;
         }
+
+        .distance {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .info-window img {
+            width: 100%;
+            max-width: 200px;
+            height: auto;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -118,7 +130,6 @@
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTPwPwaQEFcpKg0aBWVEeWmcz_xIXXZug&callback=initMap" async defer></script>
 
@@ -140,12 +151,13 @@
         let allCenters = [];
         let map;
         let infoWindow;
+        let userLat, userLon;
 
         function initMap() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
-                    const userLat = position.coords.latitude;
-                    const userLon = position.coords.longitude;
+                    userLat = position.coords.latitude;
+                    userLon = position.coords.longitude;
 
                     map = new google.maps.Map(document.getElementById('map'), {
                         zoom: 13,
@@ -173,7 +185,7 @@
                 const data = snapshot.val();
                 if (data) {
                     allCenters = [];
-                    const nearbyCenters = [];
+                    const centersWithDistance = [];
 
                     for (const key in data) {
                         const center = data[key];
@@ -181,66 +193,33 @@
                         const centerLon = center.Longitud;
                         const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
-                        if (distance <= 10) { // Mostrar solo los centros a menos de 10 km
-                            nearbyCenters.push(center);
+                        centersWithDistance.push({
+                            center,
+                            distance
+                        });
+                    }
 
-                            const marker = new google.maps.Marker({
-                                position: { lat: centerLat, lng: centerLon },
-                                map: map,
-                                title: center.Administrador,
-                                icon: {
-                                    url: "/images/environment-15-512-_1_.png", // Icono para los centros
-                                    scaledSize: new google.maps.Size(30, 30)
-                                }
-                            });
+                    // Ordenar los centros por distancia (de menor a mayor)
+                    centersWithDistance.sort((a, b) => a.distance - b.distance);
 
-                            marker.center = center;
-                            markers.push(marker);
+                    // Mostrar los 3 centros más cercanos
+                    const centerList = document.getElementById('center-list');
+                    for (let i = 0; i < 3; i++) {
+                        if (centersWithDistance[i]) {
+                            const center = centersWithDistance[i].center;
+                            const distance = centersWithDistance[i].distance;
 
-                            google.maps.event.addListener(marker, 'click', function() {
-                                let imageUrl;
-                                if (center.Material.includes('celular')) {
-                                    imageUrl = "/images/celular.png";
-                                } else if (center.Material.includes(',')) {
-                                    imageUrl = "/images/reciclaje.png";
-                                } else if (center.Material === 'Vidrio') {
-                                    imageUrl = "/images/vidrio.png";
-                                } else if (center.Material === 'Plástico') {
-                                    imageUrl = "/images/plastico.png";
-                                } else if (center.Material === 'Papel') {
-                                    imageUrl = "/images/papel.png";
-                                } else if (center.Material === 'Metal') {
-                                    imageUrl = "/images/metal.png";
-                                } else {
-                                    imageUrl = "/images/placeholder.png";
-                                }
-
-                                const contentString = `
-                                    <div>
-                                        <h3>${center.Administrador}</h3>
-                                        <p><strong>Dirección:</strong> ${center.Dirección}</p>
-                                        <p><strong>Material:</strong> ${center.Material}</p>
-                                        <img src="${imageUrl}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;" onerror="handleImageError(this)">
-                                    </div>
-                                `;
-                                
-                                infoWindow.setContent(contentString);
-                                infoWindow.open(map, marker);
-                            });
-
-                            allCenters.push(center);
+                            const li = document.createElement('li');
+                            li.innerHTML = `${center.Administrador} - ${center.Dirección} <span class="distance">(${distance.toFixed(2)} km)</span>`;
+                            centerList.appendChild(li);
                         }
                     }
 
-                    // Mostrar los centros más cercanos en el HTML
-                    const centerList = document.getElementById('center-list');
-                    nearbyCenters.forEach(center => {
-                        const li = document.createElement('li');
-                        li.textContent = `${center.Administrador} - ${center.Dirección}`;
-                        centerList.appendChild(li);
-                    });
-
                     document.getElementById('nearby-centers').style.display = 'block';
+
+                    // Actualizar los marcadores
+                    allCenters = centersWithDistance.map(item => item.center);
+                    updateMarkers();
                 }
             });
         }
@@ -256,20 +235,11 @@
             return R * c; // Distancia en km
         }
 
-        function applyFilter() {
-            const materialFilter = document.getElementById('material-filter').value.toLowerCase();
-
-            // Filtrar los centros que coincidan con el material
-            const filteredCenters = allCenters.filter(center => {
-                return materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
-            });
-
-            // Borrar los marcadores actuales
-            markers.forEach(marker => marker.setMap(null));
+        function updateMarkers() {
+            markers.forEach(marker => marker.setMap(null)); // Borrar marcadores anteriores
             markers = [];
 
-            // Añadir los marcadores filtrados
-            filteredCenters.forEach(center => {
+            allCenters.forEach(center => {
                 const marker = new google.maps.Marker({
                     position: { lat: center.Latitud, lng: center.Longitud },
                     map: map,
@@ -284,12 +254,10 @@
                 markers.push(marker);
 
                 google.maps.event.addListener(marker, 'click', function() {
-                    let imageUrl;
+                    let imageUrl = "/images/reciclaje.png"; // Default image
 
                     if (center.Material.includes('celular')) {
                         imageUrl = "/images/celular.png";
-                    } else if (center.Material.includes(',')) {
-                        imageUrl = "/images/reciclaje.png";
                     } else if (center.Material === 'Vidrio') {
                         imageUrl = "/images/vidrio.png";
                     } else if (center.Material === 'Plástico') {
@@ -298,8 +266,6 @@
                         imageUrl = "/images/papel.png";
                     } else if (center.Material === 'Metal') {
                         imageUrl = "/images/metal.png";
-                    } else {
-                        imageUrl = "/images/placeholder.png";
                     }
 
                     const contentString = `
@@ -315,6 +281,23 @@
                     infoWindow.open(map, marker);
                 });
             });
+        }
+
+        function applyFilter() {
+            const materialFilter = document.getElementById('material-filter').value.toLowerCase();
+
+            // Filtrar los centros según el material seleccionado
+            const filteredCenters = allCenters.filter(center => {
+                return materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
+            });
+
+            // Actualizar los marcadores después de filtrar
+            updateMarkers(filteredCenters);
+        }
+
+        function handleImageError(image) {
+            image.onerror = null;
+            image.src = '/images/placeholder.png';
         }
     </script>
 </body>
