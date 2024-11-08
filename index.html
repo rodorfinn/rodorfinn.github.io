@@ -17,10 +17,11 @@
         .header {
             display: flex;
             align-items: center;
-            justify-content: space-between; /* Alinea el contenido a la izquierda y derecha */
+            justify-content: space-between;
             padding: 10px 20px;
             background-color: #2e7d32;
             color: #ffffff;
+            position: relative;
         }
 
         .logo {
@@ -34,12 +35,19 @@
             font-size: 24px;
         }
 
-        /* Estilo para el formulario de inicio de sesión alineado a la derecha */
+        /* Estilo para el formulario de inicio de sesión */
         .login-container {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            justify-content: center;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none; /* Inicialmente oculto */
+            z-index: 1000;
         }
 
         .login-container input {
@@ -130,35 +138,38 @@
         /* Estilos responsive para dispositivos móviles */
         @media (max-width: 768px) {
             .header {
-                flex-direction: column; /* Colocar los elementos del encabezado en columna */
-                align-items: center; /* Centrar el contenido */
+                flex-direction: column;
+                align-items: center;
                 padding: 15px;
             }
 
             .login-container {
-                width: 100%;
-                align-items: center; /* Alinear los elementos al centro */
+                width: 90%;
+                position: static;
+                margin: 10px auto;
+                padding: 15px;
+                display: block; /* Hacer visible el login en móviles */
             }
 
             .login-container input,
             .login-container button {
-                width: 90%;
+                width: 100%;
                 margin: 8px 0;
             }
 
             #map {
-                height: 60vh; /* Ajustar el tamaño del mapa en pantallas pequeñas */
+                height: 60vh;
             }
         }
 
         @media (max-width: 480px) {
             h1 {
-                font-size: 20px; /* Ajustar el tamaño del texto en pantallas más pequeñas */
+                font-size: 20px;
             }
 
             .login-container input,
             .login-container button {
-                font-size: 14px; /* Reducir tamaño de fuente en inputs y botones */
+                font-size: 14px;
             }
         }
     </style>
@@ -170,7 +181,7 @@
             <h1>RecyClac</h1>
         </div>
 
-        <!-- Formulario de inicio de sesión dentro de la barra verde -->
+        <!-- Formulario de inicio de sesión, se muestra en móviles y en escritorio se coloca a la derecha -->
         <div class="login-container" id="login-container">
             <input type="email" id="email" placeholder="Correo electrónico" required>
             <input type="password" id="password" placeholder="Contraseña" required>
@@ -199,7 +210,6 @@
         <ul id="center-list" class="center-list"></ul>
     </div>
 
-    <!-- Cargar Firebase y Google Maps -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
@@ -258,10 +268,11 @@
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
+
             auth.signInWithEmailAndPassword(email, password)
                 .then(userCredential => {
                     alert('Bienvenido');
+                    document.getElementById('login-container').style.display = 'none'; // Ocultar el login al iniciar sesión
                 })
                 .catch(error => {
                     alert('Error al iniciar sesión: ' + error.message);
