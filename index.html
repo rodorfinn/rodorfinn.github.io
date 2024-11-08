@@ -12,9 +12,11 @@
             background-color: #e8f5e9;
         }
 
+        /* Estilo para el encabezado y barra de navegación */
         .header {
             display: flex;
             align-items: center;
+            justify-content: space-between; /* Alinea el contenido a la izquierda y derecha */
             padding: 10px 20px;
             background-color: #2e7d32;
             color: #ffffff;
@@ -31,42 +33,36 @@
             font-size: 24px;
         }
 
-        /* Estilo para el formulario de inicio de sesión en la parte superior derecha */
+        /* Estilo para el formulario de inicio de sesión alineado a la derecha */
         .login-container {
-            position: fixed;
-            top: 10px;
-            right: 20px;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            width: 300px;
-            text-align: center;
-            z-index: 1000; /* Asegura que el formulario esté encima de otros elementos */
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;  /* Alinea los elementos al final (derecha) */
+            justify-content: center;
         }
 
         .login-container input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
+            padding: 8px;
+            margin: 5px 0;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
 
         .login-container button {
-            width: 100%;
-            padding: 10px;
+            padding: 8px;
             background-color: #43a047;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            width: 100%;
         }
 
         .login-container button:hover {
             background-color: #388e3c;
         }
 
+        /* Filtro de materiales */
         .filter-container {
             position: absolute;
             top: 70px;
@@ -133,16 +129,17 @@
 </head>
 <body>
     <div class="header">
-        <img src="/images/logo.png" alt="Logo de RecyClac" class="logo">
-        <h1>RecyClac</h1>
-    </div>
+        <div style="display: flex; align-items: center;">
+            <img src="/images/logo.png" alt="Logo de RecyClac" class="logo">
+            <h1>RecyClac</h1>
+        </div>
 
-    <!-- Formulario de inicio de sesión en la parte superior derecha -->
-    <div class="login-container" id="login-container">
-        <h2>Iniciar sesión</h2>
-        <input type="email" id="email" placeholder="Correo electrónico" required>
-        <input type="password" id="password" placeholder="Contraseña" required>
-        <button onclick="login()">Iniciar sesión</button>
+        <!-- Formulario de inicio de sesión dentro de la barra verde -->
+        <div class="login-container" id="login-container">
+            <input type="email" id="email" placeholder="Correo electrónico" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button onclick="login()">Iniciar sesión</button>
+        </div>
     </div>
 
     <div id="filter-container" class="filter-container">
@@ -275,7 +272,6 @@
                     }
 
                     document.getElementById('nearby-centers').style.display = 'block';
-
                     allCenters = centersWithDistance.map(item => item.center);
                     updateMarkers();
                 }
