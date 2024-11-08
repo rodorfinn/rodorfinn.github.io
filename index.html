@@ -13,6 +13,7 @@
             overflow-x: hidden;
         }
 
+        /* Estilo para el encabezado y barra de navegación */
         .header {
             display: flex;
             align-items: center;
@@ -35,7 +36,7 @@
         }
 
         /* Estilo para el formulario de inicio de sesión */
-        .login-container, .register-container {
+        .login-container {
             display: flex;
             flex-direction: column;
             position: absolute;
@@ -45,19 +46,18 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none; /* Inicialmente oculto */
             z-index: 1000;
         }
 
-        .login-container input,
-        .register-container input {
+        .login-container input {
             padding: 8px;
             margin: 5px 0;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
 
-        .login-container button,
-        .register-container button {
+        .login-container button {
             padding: 8px;
             background-color: #43a047;
             color: white;
@@ -67,41 +67,124 @@
             width: 100%;
         }
 
-        .login-container button:hover,
-        .register-container button:hover {
+        .login-container button:hover {
             background-color: #388e3c;
         }
 
-        .login-container a, .register-container a {
-            color: #43a047;
-            text-decoration: none;
-            text-align: center;
-            margin-top: 10px;
-            font-size: 14px;
+        /* Filtro de materiales */
+        .filter-container {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            max-width: 90%;
+            width: 300px; /* Aseguramos que tenga un tamaño adecuado en móviles */
         }
 
-        /* Mapa */
-        #map {
-            height: 70vh; /* Aseguramos que el mapa tenga altura */
+        .filter-container select, .filter-container button {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
             width: 100%;
         }
 
-        /* Responsive */
+        .filter-container button {
+            background-color: #43a047;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .filter-container button:hover {
+            background-color: #388e3c;
+        }
+
+        #map {
+            height: 70vh;
+            width: 100%;
+        }
+
+        .center-info {
+            margin: 20px;
+        }
+
+        .center-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .center-list li {
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        .distance {
+            font-size: 14px;
+            color: #666;
+        }
+
+        #street-view-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 10px;
+        }
+
+        /* Estilos responsive para dispositivos móviles */
         @media (max-width: 768px) {
-            .login-container, .register-container {
+            .header {
+                flex-direction: column;
+                align-items: center;
+                padding: 15px;
+            }
+
+            .login-container {
                 width: 90%;
                 position: static;
                 margin: 10px auto;
                 padding: 15px;
-                display: block; /* Mostrar formularios de login y registro en dispositivos móviles */
+                display: block; /* Hacer visible el login en móviles */
             }
 
             .login-container input,
-            .login-container button,
-            .register-container input,
-            .register-container button {
+            .login-container button {
                 width: 100%;
                 margin: 8px 0;
+            }
+
+            /* El filtro ahora se coloca debajo del formulario en móviles */
+            .filter-container {
+                position: static;
+                margin-top: 20px;
+                width: 90%;
+                left: auto;
+                transform: none;
+                padding: 15px;
+                box-sizing: border-box;
+                max-width: 400px;
+            }
+
+            #map {
+                height: 60vh;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 20px;
+            }
+
+            .login-container input,
+            .login-container button {
+                font-size: 14px;
             }
         }
     </style>
@@ -113,35 +196,41 @@
             <h1>RecyClac</h1>
         </div>
 
-        <!-- Formulario de inicio de sesión -->
+        <!-- Formulario de inicio de sesión, se muestra en móviles y en escritorio se coloca a la derecha -->
         <div class="login-container" id="login-container">
             <input type="email" id="email" placeholder="Correo electrónico" required>
             <input type="password" id="password" placeholder="Contraseña" required>
             <button onclick="login()">Iniciar sesión</button>
-            <a href="javascript:void(0);" onclick="showRegisterForm()">¿No tienes cuenta? Regístrate aquí</a>
-        </div>
-
-        <!-- Formulario de registro -->
-        <div class="register-container" id="register-container" style="display:none;">
-            <input type="email" id="register-email" placeholder="Correo electrónico" required>
-            <input type="password" id="register-password" placeholder="Contraseña" required>
-            <input type="password" id="register-confirm-password" placeholder="Confirmar contraseña" required>
-            <button onclick="register()">Registrarse</button>
-            <a href="javascript:void(0);" onclick="showLoginForm()">¿Ya tienes cuenta? Inicia sesión aquí</a>
         </div>
     </div>
 
-    <!-- Mapa -->
+    <div id="filter-container" class="filter-container">
+        <select id="material-filter" onchange="applyFilter()">
+            <option value="">Filtrar por material</option>
+            <option value="vidrio">Vidrio</option>
+            <option value="plástico">Plástico</option>
+            <option value="papel">Papel</option>
+            <option value="cartón">Cartón</option>
+            <option value="metal">Metal</option>
+            <option value="celular">Celular</option>
+            <option value="pilas">Pilas</option>
+        </select>
+        <button onclick="applyFilter()">Aplicar filtro</button>
+    </div>
+
     <div id="map"></div>
+
+    <div id="nearby-centers" class="center-info" style="display: none;">
+        <h2>Centros más cercanos a tu ubicación:</h2>
+        <ul id="center-list" class="center-list"></ul>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
-    <!-- Reemplaza con tu propia API Key de Google -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTPwPwaQEFcpKg0aBWVEeWmcz_xIXXZug&callback=initMap" async defer></script>
 
     <script>
-        // Configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB-Je8LYFkR9r6jEIaO5NZkCUAbZRyX7k4",
             authDomain: "recyclacweb.firebaseapp.com",
@@ -157,17 +246,19 @@
         const auth = firebase.auth();
         const database = firebase.database();
 
-        let map, infoWindow;
+        let markers = [];
+        let allCenters = [];
+        let map;
+        let infoWindow;
         let userLat, userLon;
+        let streetViewPanorama;
 
-        // Función para inicializar el mapa
         function initMap() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     userLat = position.coords.latitude;
                     userLon = position.coords.longitude;
 
-                    // Inicializamos el mapa
                     map = new google.maps.Map(document.getElementById('map'), {
                         zoom: 13,
                         center: { lat: userLat, lng: userLon }
@@ -175,7 +266,6 @@
 
                     infoWindow = new google.maps.InfoWindow();
 
-                    // Colocamos un marcador en la ubicación del usuario
                     const userMarker = new google.maps.Marker({
                         position: { lat: userLat, lng: userLon },
                         map: map,
@@ -185,23 +275,11 @@
                         }
                     });
 
-                    // Cargar centros cercanos al usuario
-                    loadCenters(userLat, userLon);
+                    loadCenters(userLat, userLon); // Cargar centros al iniciar el mapa
                 });
             }
         }
 
-        // Función para cargar centros de reciclaje cercanos
-        function loadCenters(userLat, userLon) {
-            database.ref().once('value').then(snapshot => {
-                const data = snapshot.val();
-                if (data) {
-                    console.log("Centros cargados", data); // Aquí iría tu lógica para cargar centros en el mapa
-                }
-            });
-        }
-
-        // Función para iniciar sesión
         function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
@@ -216,41 +294,113 @@
                 });
         }
 
-        // Función para registrar un nuevo usuario
-        function register() {
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-confirm-password').value;
+        function loadCenters(userLat, userLon) {
+            database.ref().once('value').then(snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    allCenters = [];
+                    const centersWithDistance = [];
 
-            if (password !== confirmPassword) {
-                alert('Las contraseñas no coinciden');
-                return;
-            }
+                    for (const key in data) {
+                        const center = data[key];
+                        const centerLat = center.Latitud;
+                        const centerLon = center.Longitud;
+                        const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(userCredential => {
-                    alert('Usuario registrado correctamente');
-                    document.getElementById('register-container').style.display = 'none'; // Ocultar el registro
-                })
-                .catch(error => {
-                    alert('Error al registrarse: ' + error.message);
+                        centersWithDistance.push({
+                            center,
+                            distance
+                        });
+                    }
+
+                    centersWithDistance.sort((a, b) => a.distance - b.distance);
+
+                    const centerList = document.getElementById('center-list');
+                    for (let i = 0; i < 3; i++) {
+                        if (centersWithDistance[i]) {
+                            const center = centersWithDistance[i].center;
+                            const distance = centersWithDistance[i].distance;
+
+                            const li = document.createElement('li');
+                            li.innerHTML = ${center.Administrador} - ${center.Dirección} <span class="distance">(${distance.toFixed(2)} km)</span>;
+                            centerList.appendChild(li);
+                        }
+                    }
+
+                    document.getElementById('nearby-centers').style.display = 'block';
+                    allCenters = centersWithDistance.map(item => item.center);
+                    updateMarkers();
+                }
+            });
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function updateMarkers(filteredCenters = null) {
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+
+            const centersToShow = filteredCenters || allCenters;
+
+            centersToShow.forEach(center => {
+                const iconUrl = "/images/environment-15-512-_1_.png";
+
+                const marker = new google.maps.Marker({
+                    position: { lat: center.Latitud, lng: center.Longitud },
+                    map: map,
+                    title: center.Administrador,
+                    icon: {
+                        url: iconUrl,
+                        scaledSize: new google.maps.Size(30, 30)
+                    }
                 });
+
+                marker.center = center;
+                markers.push(marker);
+
+                google.maps.event.addListener(marker, 'click', function() {
+                    const materialImage = center.Material.toLowerCase() + '.png';
+                    const contentString = 
+                        <div>
+                            <h3>${center.Administrador}</h3>
+                            <p><strong>Dirección:</strong> ${center.Dirección}</p>
+                            <p><strong>Material:</strong> ${center.Material}</p>
+                            <img src="/images/${materialImage}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
+                            <h4>Vista en 360 grados:</h4>
+                            <div id="street-view-container"></div>
+                        </div>
+                    ;
+                    infoWindow.setContent(contentString);
+                    infoWindow.open(map, marker);
+
+                    streetViewPanorama = new google.maps.StreetViewPanorama(
+                        document.getElementById('street-view-container'),
+                        {
+                            position: { lat: center.Latitud, lng: center.Longitud },
+                            pov: { heading: 165, pitch: 0 },
+                            zoom: 1
+                        }
+                    );
+                });
+            });
         }
 
-        // Mostrar el formulario de inicio de sesión
-        function showLoginForm() {
-            document.getElementById('login-container').style.display = 'flex';
-            document.getElementById('register-container').style.display = 'none';
+        function applyFilter() {
+            const materialFilter = document.getElementById('material-filter').value.toLowerCase();
+            const filteredCenters = allCenters.filter(center => {
+                return materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
+            });
+            updateMarkers(filteredCenters);
         }
-
-        // Mostrar el formulario de registro
-        function showRegisterForm() {
-            document.getElementById('register-container').style.display = 'flex';
-            document.getElementById('login-container').style.display = 'none';
-        }
-
-        // Inicializa el mapa cuando la API de Google Maps haya cargado
-        window.initMap = initMap;
     </script>
 </body>
 </html>
