@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RecyClac</title>
     <style>
-        /* Estilos previos */
         body, html {
             margin: 0;
             padding: 0;
@@ -32,7 +31,6 @@
             font-size: 24px;
         }
 
-        /* Para el filtro */
         .filter-container {
             position: absolute;
             top: 70px;
@@ -66,7 +64,6 @@
             background-color: #388e3c;
         }
 
-        /* Estilos para el mapa */
         #map {
             height: 80vh;
             width: 100%;
@@ -125,9 +122,6 @@
         <h2>Centros más cercanos a tu ubicación:</h2>
         <ul id="center-list" class="center-list"></ul>
     </div>
-
-    <!-- Contenedor para Street View -->
-    <div id="street-view-container"></div>
 
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
@@ -265,23 +259,33 @@
                     // URL de la imagen de Street View
                     const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${center.Latitud},${center.Longitud}&fov=90&heading=235&pitch=10&key=AIzaSyAnxTkObM1_BkilYVkGjUv6CdYK5IOgkHw`;
 
-                    // Crear el Street View interactivo
-                    if (!streetViewPanorama) {
-                        streetViewPanorama = new google.maps.StreetViewPanorama(
-                            document.getElementById('street-view-container'),
-                            {
-                                position: { lat: center.Latitud, lng: center.Longitud },
-                                pov: {
-                                    heading: 165,  // Dirección hacia la que mira
-                                    pitch: 0      // Ángulo hacia arriba o abajo
-                                },
-                                zoom: 1
-                            }
-                        );
-                    }
+                    // Crear el Street View interactivo dentro del infoWindow
+                    const contentString = `
+                        <div>
+                            <h3>${center.Administrador}</h3>
+                            <p><strong>Dirección:</strong> ${center.Dirección}</p>
+                            <p><strong>Material:</strong> ${center.Material}</p>
+                            <img src="/images/${materialImage}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
+                            <h4>Vista en 360 grados:</h4>
+                            <div id="street-view-container"></div>
+                        </div>
+                    `;
 
-                    // Cambiar la posición del Street View
-                    streetViewPanorama.setPosition({ lat: center.Latitud, lng: center.Longitud });
+                    infoWindow.setContent(contentString);
+                    infoWindow.open(map, marker);
+
+                    // Inicializar y mostrar el StreetView en el infoWindow
+                    streetViewPanorama = new google.maps.StreetViewPanorama(
+                        document.getElementById('street-view-container'),
+                        {
+                            position: { lat: center.Latitud, lng: center.Longitud },
+                            pov: {
+                                heading: 165,  // Dirección hacia la que mira
+                                pitch: 0      // Ángulo hacia arriba o abajo
+                            },
+                            zoom: 1
+                        }
+                    );
                 });
             });
         }
