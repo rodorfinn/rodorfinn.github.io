@@ -33,39 +33,11 @@
             font-size: 24px;
         }
 
-        /* Estilos para los formularios de inicio de sesión y registro */
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            max-width: 400px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        #map {
+            height: 80vh;
+            width: 100%;
         }
 
-        .login-form input {
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .login-form button {
-            padding: 10px;
-            background-color: #43a047;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .login-form button:hover {
-            background-color: #388e3c;
-        }
-
-        /* Contenedor de la barra de búsqueda */
         .search-bar-container {
             position: absolute;
             top: 70px;
@@ -98,65 +70,12 @@
             background-color: #388e3c; /* Más oscuro al pasar el ratón */
         }
 
-        #map {
-            height: 80vh;
-            width: 100%;
-        }
-
-        /* New style for InfoWindow */
-        .gm-style-iw {
-            max-width: 300px !important;
-        }
-
-        /* Estilo para el mensaje de error */
-        .error-message {
-            color: red;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
     </style>
 </head>
 <body>
-    <!-- Encabezado con logo y título -->
     <div class="header">
         <img src="/images/logo.png" alt="Logo de RecyClac" class="logo">
         <h1>RecyClac</h1>
-    </div>
-
-    <!-- Formulario de inicio de sesión -->
-    <div id="login-form" class="login-form">
-        <h2>Iniciar sesión</h2>
-        <input type="email" id="email" placeholder="Correo electrónico" required>
-        <input type="password" id="password" placeholder="Contraseña" required>
-        <button onclick="login()">Iniciar sesión</button>
-        <p>Aún no tienes cuenta? <a href="javascript:void(0);" onclick="showRegister()">Regístrate</a></p>
-        <div id="error-message" class="error-message"></div>
-    </div>
-
-    <!-- Formulario de registro -->
-    <div id="register-form" class="login-form" style="display: none;">
-        <h2>Registrar cuenta</h2>
-        <input type="email" id="new-email" placeholder="Correo electrónico" required>
-        <input type="password" id="new-password" placeholder="Contraseña" required>
-        <button onclick="register()">Registrarse</button>
-        <p>Ya tienes cuenta? <a href="javascript:void(0);" onclick="showLogin()">Iniciar sesión</a></p>
-        <div id="register-error-message" class="error-message"></div>
-    </div>
-
-    <!-- Barra de búsqueda -->
-    <div class="search-bar-container" style="display: none;">
-        <input type="text" id="search-bar" placeholder="Buscar centro de reciclaje...">
-        <select id="material-filter">
-            <option value="">Todos los materiales</option>
-            <option value="vidrio">Vidrio</option>
-            <option value="papel">Papel</option>
-            <option value="cartón">Cartón</option>
-            <option value="plástico">Plástico</option>
-            <option value="metal">Metal</option>
-            <option value="celular">Celular</option>
-            <option value="pilas">Pilas</option>
-        </select>
-        <button onclick="applyFilter()">Buscar</button>
     </div>
 
     <div id="map"></div>
@@ -180,67 +99,13 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const database = firebase.database();
         let markers = [];
-
-        // Muestra el formulario de inicio de sesión
-        function showLogin() {
-            document.getElementById('login-form').style.display = 'block';
-            document.getElementById('register-form').style.display = 'none';
-        }
-
-        // Muestra el formulario de registro
-        function showRegister() {
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('register-form').style.display = 'block';
-        }
-
-        // Inicia sesión
-        function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    document.getElementById('login-form').style.display = 'none';
-                    document.getElementById('search-bar-container').style.display = 'block'; // Muestra la barra de búsqueda
-                    initMap(); // Inicia el mapa después de hacer login
-                })
-                .catch((error) => {
-                    document.getElementById('error-message').innerText = error.message;
-                });
-        }
-
-        // Registro de usuario
-        function register() {
-            const email = document.getElementById('new-email').value;
-            const password = document.getElementById('new-password').value;
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(() => {
-                    showLogin();
-                })
-                .catch((error) => {
-                    document.getElementById('register-error-message').innerText = error.message;
-                });
-        }
-
-        // Calcula la distancia entre dos coordenadas
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radio de la Tierra en km
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c; // Devuelve la distancia en km
-        }
 
         // Inicializa el mapa
         function initMap() {
             console.log('Iniciando mapa...');
+
             const mapOptions = {
                 center: { lat: -33.4489, lng: -70.6693 }, // Coordenadas iniciales
                 zoom: 12,
@@ -254,7 +119,7 @@
                     const userLat = position.coords.latitude;
                     const userLon = position.coords.longitude;
 
-                    console.log('Ubicación del usuario:', userLat, userLon);
+                    console.log('Ubicación obtenida:', userLat, userLon);
 
                     map.setCenter({ lat: userLat, lng: userLon });
 
@@ -264,14 +129,15 @@
                         map: map,
                         title: 'Tu ubicación',
                         icon: {
-                            url: '/images/user-location.png', // Puedes cambiar la imagen
-                            scaledSize: new google.maps.Size(30, 30),
+                            url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png', // Icono más visible
+                            scaledSize: new google.maps.Size(40, 40), // Tamaño del marcador
                         }
                     });
 
                     // Cargar los centros de reciclaje
                     loadCenters(map, userLat, userLon, infoWindow);
-                }, function() {
+                }, function(error) {
+                    console.error("Error al obtener la ubicación:", error);
                     alert("No se pudo obtener la ubicación.");
                 });
             } else {
@@ -330,17 +196,16 @@
             });
         }
 
-        // Aplica el filtro de materiales
-        function applyFilter() {
-            const filter = document.getElementById('material-filter').value.toLowerCase();
-            markers.forEach(marker => {
-                const centerMaterial = marker.center.Material.toLowerCase();
-                if (!filter || centerMaterial === filter) {
-                    marker.setVisible(true);
-                } else {
-                    marker.setVisible(false);
-                }
-            });
+        // Calcula la distancia entre dos coordenadas
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radio de la Tierra en km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c; // Devuelve la distancia en km
         }
 
         // Manejo de errores de imágenes
