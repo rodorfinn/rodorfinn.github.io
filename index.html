@@ -8,56 +8,62 @@
         body, html {
             margin: 0;
             padding: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #e8f5e9;
+            box-sizing: border-box;
         }
 
         .header {
             display: flex;
             align-items: center;
-            padding: 10px 20px;
+            justify-content: space-between;
+            padding: 15px 20px;
             background-color: #2e7d32;
-            color: #ffffff;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .logo {
-            width: 50px;
-            height: 50px;
-            margin-right: 10px;
+            width: 60px;
+            height: 60px;
+            margin-right: 15px;
         }
 
         h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: 26px;
+            font-weight: bold;
         }
 
         .filter-container {
             position: absolute;
-            top: 70px;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             display: flex;
-            gap: 5px;
+            gap: 10px;
             align-items: center;
+            z-index: 100;
         }
 
         .filter-container select, .filter-container button {
-            padding: 8px;
+            padding: 12px 18px;
             font-size: 16px;
+            border-radius: 8px;
             border: 1px solid #ccc;
-            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
         }
 
         .filter-container button {
             background-color: #43a047;
             color: white;
             border: none;
-            cursor: pointer;
+            transition: background-color 0.3s;
         }
 
         .filter-container button:hover {
@@ -71,21 +77,33 @@
 
         .center-info {
             margin: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .center-info h2 {
+            margin-top: 0;
+            color: #2e7d32;
         }
 
         .center-list {
             list-style: none;
             padding-left: 0;
+            margin-top: 10px;
         }
 
         .center-list li {
-            padding: 5px;
+            padding: 8px;
             font-size: 16px;
+            border-bottom: 1px solid #eee;
+            color: #333;
         }
 
         .distance {
             font-size: 14px;
-            color: #666;
+            color: #777;
         }
 
         .info-window img {
@@ -93,6 +111,27 @@
             max-width: 200px;
             height: auto;
             margin-top: 10px;
+        }
+
+        /* Estilo responsive para pantallas más pequeñas */
+        @media screen and (max-width: 768px) {
+            .filter-container {
+                flex-direction: column;
+                width: 90%;
+            }
+
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .logo {
+                margin-bottom: 10px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
         }
     </style>
 </head>
@@ -229,79 +268,46 @@
             return R * c; // Distancia en km
         }
 
-        function updateMarkers(filteredCenters = null) {
-            markers.forEach(marker => marker.setMap(null)); // Borrar marcadores anteriores
+        function applyFilter() {
+            const filterValue = document.getElementById('material-filter').value;
+
+            // Filtrar los centros por el material seleccionado
+            if (filterValue) {
+                const filteredCenters = allCenters.filter(center => {
+                    return center.Material.toLowerCase() === filterValue.toLowerCase();
+                });
+
+                updateMarkers(filteredCenters);
+            } else {
+                updateMarkers(allCenters);
+            }
+        }
+
+        function updateMarkers(filteredCenters = allCenters) {
+            // Eliminar los marcadores existentes
+            markers.forEach(marker => marker.setMap(null));
             markers = [];
 
-            // Si no hay filtro, mostramos todos los centros
-            const centersToShow = filteredCenters || allCenters;
-
-            centersToShow.forEach(center => {
-                let iconUrl = "/images/reciclaje.png"; // Valor por defecto
-
-                // Asignar el ícono correcto según el material
-                switch (center.Material.toLowerCase()) {
-                    case 'vidrio':
-                        iconUrl = "/images/vidrio.png";
-                        break;
-                    case 'plástico':
-                        iconUrl = "/images/plastico.png";
-                        break;
-                    case 'papel':
-                        iconUrl = "/images/papel.png";
-                        break;
-                    case 'cartón':
-                        iconUrl = "/images/carton.png";
-                        break;
-                    case 'metal':
-                        iconUrl = "/images/metal.png";
-                        break;
-                    case 'celular':
-                        iconUrl = "/images/celular.png";
-                        break;
-                    default:
-                        iconUrl = "/images/reciclaje.png";
-                }
-
+            filteredCenters.forEach(center => {
                 const marker = new google.maps.Marker({
                     position: { lat: center.Latitud, lng: center.Longitud },
                     map: map,
-                    title: center.Administrador,
-                    icon: {
-                        url: iconUrl,
-                        scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado del ícono
-                    }
+                    title: center.Administrador
                 });
 
-                marker.center = center;
                 markers.push(marker);
 
-                google.maps.event.addListener(marker, 'click', function() {
-                    const contentString = `
-                        <div>
+                google.maps.event.addListener(marker, 'click', () => {
+                    infoWindow.setContent(`
+                        <div class="info-window">
                             <h3>${center.Administrador}</h3>
-                            <p><strong>Dirección:</strong> ${center.Dirección}</p>
-                            <p><strong>Material:</strong> ${center.Material}</p>
-                            <img src="${iconUrl}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
+                            <p>${center.Dirección}</p>
+                            <img src="${center.Imagen || '/images/default.jpg'}" alt="Imagen del centro">
                         </div>
-                    `;
-
-                    infoWindow.setContent(contentString);
+                    `);
                     infoWindow.open(map, marker);
                 });
             });
-        }
-
-        function applyFilter() {
-            const materialFilter = document.getElementById('material-filter').value.toLowerCase();
-
-            // Filtrar los centros según el material seleccionado
-            const filteredCenters = allCenters.filter(center => {
-                return materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
-            });
-
-            // Actualizar los marcadores después de filtrar
-            updateMarkers(filteredCenters);
         }
     </script>
 </body>
