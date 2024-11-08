@@ -5,21 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RecyClac</title>
     <style>
-        /* Estilos básicos */
         body, html {
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
-            background-color: #e8f5e9; /* Fondo verde claro */
+            background-color: #e8f5e9;
         }
 
-        /* Contenedor del logo y el título */
         .header {
             display: flex;
             align-items: center;
             padding: 10px 20px;
-            background-color: #2e7d32; /* Verde oscuro para el encabezado */
-            color: #ffffff; /* Texto blanco */
+            background-color: #2e7d32;
+            color: #ffffff;
         }
 
         .logo {
@@ -33,39 +31,6 @@
             font-size: 24px;
         }
 
-        /* Estilos para los formularios de inicio de sesión y registro */
-        .login-form {
-            display: flex;
-            flex-direction: column;
-            max-width: 400px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .login-form input {
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .login-form button {
-            padding: 10px;
-            background-color: #43a047;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .login-form button:hover {
-            background-color: #388e3c;
-        }
-
-        /* Contenedor del filtro de materiales */
         .filter-container {
             position: absolute;
             top: 70px;
@@ -89,14 +54,14 @@
         }
 
         .filter-container button {
-            background-color: #43a047; /* Botón verde */
+            background-color: #43a047;
             color: white;
             border: none;
             cursor: pointer;
         }
 
         .filter-container button:hover {
-            background-color: #388e3c; /* Más oscuro al pasar el ratón */
+            background-color: #388e3c;
         }
 
         #map {
@@ -104,49 +69,36 @@
             width: 100%;
         }
 
-        /* Estilo para el mensaje de error */
+        .center-info {
+            margin: 20px;
+        }
+
         .error-message {
             color: red;
             font-size: 14px;
             margin-bottom: 10px;
         }
 
-        .center-info {
-            margin: 20px;
+        .center-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .center-list li {
+            padding: 5px;
+            font-size: 16px;
         }
     </style>
 </head>
 <body>
-    <!-- Encabezado con logo y título -->
     <div class="header">
         <img src="/images/logo.png" alt="Logo de RecyClac" class="logo">
         <h1>RecyClac</h1>
     </div>
 
-    <!-- Formulario de inicio de sesión -->
-    <div id="login-form" class="login-form">
-        <h2>Iniciar sesión</h2>
-        <input type="email" id="email" placeholder="Correo electrónico" required>
-        <input type="password" id="password" placeholder="Contraseña" required>
-        <button onclick="login()">Iniciar sesión</button>
-        <p>Aún no tienes cuenta? <a href="javascript:void(0);" onclick="showRegister()">Regístrate</a></p>
-        <div id="error-message" class="error-message"></div>
-    </div>
-
-    <!-- Formulario de registro -->
-    <div id="register-form" class="login-form" style="display: none;">
-        <h2>Registrar cuenta</h2>
-        <input type="email" id="new-email" placeholder="Correo electrónico" required>
-        <input type="password" id="new-password" placeholder="Contraseña" required>
-        <button onclick="register()">Registrarse</button>
-        <p>Ya tienes cuenta? <a href="javascript:void(0);" onclick="showLogin()">Iniciar sesión</a></p>
-        <div id="register-error-message" class="error-message"></div>
-    </div>
-
-    <!-- Filtro por material -->
-    <div id="filter-container" class="filter-container" style="display: none;">
+    <div id="filter-container" class="filter-container">
         <select id="material-filter" onchange="applyFilter()">
-            <option value="">Todos los materiales</option>
+            <option value="">Filtrar por material</option>
             <option value="vidrio">Vidrio</option>
             <option value="plástico">Plástico</option>
             <option value="papel">Papel</option>
@@ -155,18 +107,16 @@
             <option value="celular">Celular</option>
             <option value="pilas">Pilas</option>
         </select>
-        <button onclick="applyFilter()">Filtrar</button>
+        <button onclick="applyFilter()">Aplicar filtro</button>
     </div>
 
     <div id="map"></div>
 
-    <!-- Mensaje de centros cercanos -->
     <div id="nearby-centers" class="center-info" style="display: none;">
         <h2>Centros más cercanos a tu ubicación:</h2>
-        <ul id="center-list"></ul>
+        <ul id="center-list" class="center-list"></ul>
     </div>
 
-    <!-- Scripts de Firebase y Google Maps -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
@@ -185,83 +135,40 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const database = firebase.database();
         let markers = [];
         let allCenters = [];
+        let map;
+        let infoWindow;
 
-        // Muestra el formulario de inicio de sesión
-        function showLogin() {
-            document.getElementById('login-form').style.display = 'block';
-            document.getElementById('register-form').style.display = 'none';
-        }
-
-        // Muestra el formulario de registro
-        function showRegister() {
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('register-form').style.display = 'block';
-        }
-
-        // Inicia sesión
-        function login() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    document.getElementById('login-form').style.display = 'none';
-                    document.getElementById('filter-container').style.display = 'block'; // Muestra el filtro
-                    initMap(); // Inicia el mapa después de hacer login
-                })
-                .catch((error) => {
-                    document.getElementById('error-message').innerText = "Error: " + error.message;
-                });
-        }
-
-        // Registra un nuevo usuario
-        function register() {
-            const email = document.getElementById('new-email').value;
-            const password = document.getElementById('new-password').value;
-
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(() => {
-                    showLogin();
-                })
-                .catch((error) => {
-                    document.getElementById('register-error-message').innerText = "Error: " + error.message;
-                });
-        }
-
-        // Inicializa el mapa
         function initMap() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     const userLat = position.coords.latitude;
                     const userLon = position.coords.longitude;
 
-                    const map = new google.maps.Map(document.getElementById('map'), {
+                    map = new google.maps.Map(document.getElementById('map'), {
                         zoom: 13,
                         center: { lat: userLat, lng: userLon }
                     });
 
-                    // Marca la ubicación del usuario
+                    infoWindow = new google.maps.InfoWindow();
+
                     const userMarker = new google.maps.Marker({
                         position: { lat: userLat, lng: userLon },
                         map: map,
                         icon: {
-                            url: "/images/1365700.png", // Icono de la ubicación del usuario
+                            url: "/images/1365700.png",
                             scaledSize: new google.maps.Size(30, 30)
                         }
                     });
 
-                    const infoWindow = new google.maps.InfoWindow();
-                    loadCenters(map, userLat, userLon, infoWindow); // Cargar centros
+                    loadCenters(userLat, userLon); // Cargar centros al iniciar el mapa
                 });
             }
         }
 
-        // Cargar los centros de reciclaje desde Firebase
-        function loadCenters(map, userLat, userLon, infoWindow) {
+        function loadCenters(userLat, userLon) {
             database.ref().once('value').then(snapshot => {
                 const data = snapshot.val();
                 if (data) {
@@ -274,7 +181,7 @@
                         const centerLon = center.Longitud;
                         const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
-                        if (distance <= 10) { // Mostrar centros a menos de 10 km
+                        if (distance <= 10) { // Mostrar solo los centros a menos de 10 km
                             nearbyCenters.push(center);
 
                             const marker = new google.maps.Marker({
@@ -338,7 +245,6 @@
             });
         }
 
-        // Calcular distancia entre dos puntos geográficos (en km)
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; // Radio de la Tierra en km
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -350,10 +256,9 @@
             return R * c; // Distancia en km
         }
 
-        // Aplicar filtro de materiales
         function applyFilter() {
             const materialFilter = document.getElementById('material-filter').value.toLowerCase();
-            
+
             // Filtrar los centros que coincidan con el material
             const filteredCenters = allCenters.filter(center => {
                 return materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
