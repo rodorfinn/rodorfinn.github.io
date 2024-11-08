@@ -110,6 +110,10 @@
             font-size: 14px;
             margin-bottom: 10px;
         }
+
+        .center-info {
+            margin: 20px;
+        }
     </style>
 </head>
 <body>
@@ -155,6 +159,12 @@
     </div>
 
     <div id="map"></div>
+
+    <!-- Mensaje de centros cercanos -->
+    <div id="nearby-centers" class="center-info" style="display: none;">
+        <h2>Centros más cercanos a tu ubicación:</h2>
+        <ul id="center-list"></ul>
+    </div>
 
     <!-- Scripts de Firebase y Google Maps -->
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
@@ -230,15 +240,16 @@
                     const userLon = position.coords.longitude;
 
                     const map = new google.maps.Map(document.getElementById('map'), {
-                        center: { lat: userLat, lng: userLon },
-                        zoom: 12
+                        zoom: 13,
+                        center: { lat: userLat, lng: userLon }
                     });
 
+                    // Marca la ubicación del usuario
                     const userMarker = new google.maps.Marker({
                         position: { lat: userLat, lng: userLon },
                         map: map,
                         icon: {
-                            url: "/images/1365700.png",  // Icono de la ubicación del usuario
+                            url: "/images/1365700.png", // Icono de la ubicación del usuario
                             scaledSize: new google.maps.Size(30, 30)
                         }
                     });
@@ -255,19 +266,23 @@
                 const data = snapshot.val();
                 if (data) {
                     allCenters = [];
+                    const nearbyCenters = [];
+
                     for (const key in data) {
                         const center = data[key];
                         const centerLat = center.Latitud;
                         const centerLon = center.Longitud;
                         const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
-                        if (distance <= 10) {  // Mostrar centros a menos de 10 km
+                        if (distance <= 10) { // Mostrar centros a menos de 10 km
+                            nearbyCenters.push(center);
+
                             const marker = new google.maps.Marker({
                                 position: { lat: centerLat, lng: centerLon },
                                 map: map,
                                 title: center.Administrador,
                                 icon: {
-                                    url: "/images/environment-15-512-_1_.png",  // Icono para los centros
+                                    url: "/images/environment-15-512-_1_.png", // Icono para los centros
                                     scaledSize: new google.maps.Size(30, 30)
                                 }
                             });
@@ -277,12 +292,10 @@
 
                             google.maps.event.addListener(marker, 'click', function() {
                                 let imageUrl;
-
-                                // Verificar los materiales que acepta el centro
                                 if (center.Material.includes('celular')) {
-                                    imageUrl = "/images/celular.png";  // Imagen para celular
+                                    imageUrl = "/images/celular.png";
                                 } else if (center.Material.includes(',')) {
-                                    imageUrl = "/images/reciclaje.png";  // Variados materiales
+                                    imageUrl = "/images/reciclaje.png";
                                 } else if (center.Material === 'Vidrio') {
                                     imageUrl = "/images/vidrio.png";
                                 } else if (center.Material === 'Plástico') {
@@ -292,7 +305,7 @@
                                 } else if (center.Material === 'Metal') {
                                     imageUrl = "/images/metal.png";
                                 } else {
-                                    imageUrl = "/images/placeholder.png"; // Imagen por defecto
+                                    imageUrl = "/images/placeholder.png";
                                 }
 
                                 const contentString = `
@@ -311,6 +324,16 @@
                             allCenters.push(center);
                         }
                     }
+
+                    // Mostrar los centros más cercanos en el HTML
+                    const centerList = document.getElementById('center-list');
+                    nearbyCenters.forEach(center => {
+                        const li = document.createElement('li');
+                        li.textContent = `${center.Administrador} - ${center.Dirección}`;
+                        centerList.appendChild(li);
+                    });
+
+                    document.getElementById('nearby-centers').style.display = 'block';
                 }
             });
         }
