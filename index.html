@@ -268,46 +268,56 @@
             return R * c; // Distancia en km
         }
 
-        function applyFilter() {
-            const filterValue = document.getElementById('material-filter').value;
-
-            // Filtrar los centros por el material seleccionado
-            if (filterValue) {
-                const filteredCenters = allCenters.filter(center => {
-                    return center.Material.toLowerCase() === filterValue.toLowerCase();
-                });
-
-                updateMarkers(filteredCenters);
-            } else {
-                updateMarkers(allCenters);
-            }
-        }
-
-        function updateMarkers(filteredCenters = allCenters) {
-            // Eliminar los marcadores existentes
-            markers.forEach(marker => marker.setMap(null));
+        function updateMarkers(filteredCenters = null) {
+            markers.forEach(marker => marker.setMap(null)); // Borrar marcadores anteriores
             markers = [];
 
-            filteredCenters.forEach(center => {
+            // Si no hay filtro, mostramos todos los centros
+            const centersToShow = filteredCenters || allCenters;
+
+            centersToShow.forEach(center => {
+                const iconUrl = "/images/environment-15-512-_1_.png"; // Ícono personalizado
+
                 const marker = new google.maps.Marker({
                     position: { lat: center.Latitud, lng: center.Longitud },
                     map: map,
-                    title: center.Administrador
+                    title: center.Administrador,
+                    icon: {
+                        url: iconUrl,
+                        scaledSize: new google.maps.Size(30, 30) // Ajustamos el tamaño del ícono
+                    }
                 });
 
+                marker.center = center;
                 markers.push(marker);
 
-                google.maps.event.addListener(marker, 'click', () => {
-                    infoWindow.setContent(`
-                        <div class="info-window">
+                google.maps.event.addListener(marker, 'click', function() {
+                    const materialImage = center.Material.toLowerCase() + '.jpg'; // Suponiendo que tengas imágenes con nombres como "vidrio.jpg", "plastico.jpg", etc.
+                    const contentString = `
+                        <div>
                             <h3>${center.Administrador}</h3>
-                            <p>${center.Dirección}</p>
-                            <img src="${center.Imagen || '/images/default.jpg'}" alt="Imagen del centro">
+                            <p><strong>Dirección:</strong> ${center.Dirección}</p>
+                            <p><strong>Material:</strong> ${center.Material}</p>
+                            <img src="/images/${materialImage}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
                         </div>
-                    `);
+                    `;
+
+                    infoWindow.setContent(contentString);
                     infoWindow.open(map, marker);
                 });
             });
+        }
+
+        function applyFilter() {
+            const materialFilter = document.getElementById('material-filter').value.toLowerCase();
+
+            // Filtrar los centros según el material seleccionado
+            const filteredCenters = allCenters.filter(center => {
+                return materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
+            });
+
+            // Actualizar los marcadores después de filtrar
+            updateMarkers(filteredCenters);
         }
     </script>
 </body>
