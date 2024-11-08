@@ -258,6 +258,17 @@
 
                     map.setCenter({ lat: userLat, lng: userLon });
 
+                    // Mostrar el marcador de la ubicación del usuario
+                    const userMarker = new google.maps.Marker({
+                        position: { lat: userLat, lng: userLon },
+                        map: map,
+                        title: 'Tu ubicación',
+                        icon: {
+                            url: '/images/user-location.png', // Puedes cambiar la imagen
+                            scaledSize: new google.maps.Size(30, 30),
+                        }
+                    });
+
                     // Cargar los centros de reciclaje
                     loadCenters(map, userLat, userLon, infoWindow);
                 }, function() {
