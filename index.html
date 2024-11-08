@@ -292,7 +292,7 @@
                 markers.push(marker);
 
                 google.maps.event.addListener(marker, 'click', function() {
-                    const materialImage = center.Material.toLowerCase() + '.jpg'; // Suponiendo que tengas imágenes con nombres como "vidrio.jpg", "plastico.jpg", etc.
+                    const materialImage = center.Material.toLowerCase() + '.png'; // Ahora con .png
                     const contentString = `
                         <div>
                             <h3>${center.Administrador}</h3>
