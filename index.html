@@ -85,6 +85,8 @@
             display: flex;
             gap: 5px;
             align-items: center;
+            max-width: 90%;
+            width: 300px; /* Aseguramos que tenga un tamaño adecuado en móviles */
         }
 
         .filter-container select, .filter-container button {
@@ -92,6 +94,7 @@
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            width: 100%;
         }
 
         .filter-container button {
@@ -155,6 +158,18 @@
             .login-container button {
                 width: 100%;
                 margin: 8px 0;
+            }
+
+            /* El filtro ahora se coloca debajo del formulario en móviles */
+            .filter-container {
+                position: static;
+                margin-top: 20px;
+                width: 90%;
+                left: auto;
+                transform: none;
+                padding: 15px;
+                box-sizing: border-box;
+                max-width: 400px;
             }
 
             #map {
@@ -260,7 +275,7 @@
                         }
                     });
 
-                    loadCenters(userLat, userLon);
+                    loadCenters(userLat, userLon); // Cargar centros al iniciar el mapa
                 });
             }
         }
@@ -331,7 +346,7 @@
         }
 
         function updateMarkers(filteredCenters = null) {
-            markers.forEach(marker => marker.setMap(null)); 
+            markers.forEach(marker => marker.setMap(null));
             markers = [];
 
             const centersToShow = filteredCenters || allCenters;
