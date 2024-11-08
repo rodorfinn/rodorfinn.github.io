@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecyClac</title>
+    <style>
+        /* Estilos básicos */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #e8f5e9; /* Fondo verde claro */
+        }
+
+        /* Contenedor del logo y el título */
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #2e7d32; /* Verde oscuro para el encabezado */
+            color: #ffffff; /* Texto blanco */
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        /* Contenedor de la barra de búsqueda */
+        .search-bar-container {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 5px;
+        }
+
+        .search-bar-container input, .search-bar-container select, .search-bar-container button {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .search-bar-container button {
+            background-color: #43a047; /* Botón verde */
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .search-bar-container button:hover {
+            background-color: #388e3c; /* Más oscuro al pasar el ratón */
+        }
+
+        #map {
+            height: 80vh;
+            width: 100%;
+        }
+
+        /* New style for InfoWindow */
+        .gm-style-iw {
+            max-width: 300px !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Encabezado con logo y título -->
+    <div class="header">
+        <img src="_0ec2eef9-a8db-4aa1-98a0-1f93ec925607.jpg" alt="Logo de RecyClac" class="logo">
+        <h1>RecyClac</h1>
+    </div>
+
+    <!-- Barra de búsqueda -->
+    <div class="search-bar-container">
+        <input type="text" id="search-bar" placeholder="Buscar centro de reciclaje...">
+        <select id="material-filter">
+            <option value="">Todos los materiales</option>
+            <option value="vidrio">Vidrio</option>
+            <option value="papel">Papel</option>
+            <option value="cartón">Cartón</option>
+            <option value="plástico">Plástico</option>
+            <option value="metal">Metal</option>
+            <option value="celular">Celular</option>
+            <option value="pilas">Pilas</option>
+        </select>
+        <button onclick="applyFilter()">Buscar</button>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- Scripts de Firebase y Google Maps -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTPwPwaQEFcpKg0aBWVEeWmcz_xIXXZug&callback=initMap" async defer></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB-Je8LYFkR9r6jEIaO5NZkCUAbZRyX7k4",
+            authDomain: "recyclacweb.firebaseapp.com",
+            projectId: "recyclacweb",
+            storageBucket: "recyclacweb.firebasestorage.app",
+            messagingSenderId: "546237991078",
+            appId: "1:546237991078:web:98d924464ac363b25d4c67",
+            measurementId: "G-EDF8LCX5YX",
+            databaseURL: "https://recyclacweb-default-rtdb.firebaseio.com"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        let markers = [];
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function handleImageError(img) {
+            img.onerror = null;
+            img.src = '/placeholder.svg?height=200&width=300';
+        }
+
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById("map"), { zoom: 12 });
+            const infoWindow = new google.maps.InfoWindow();
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const userLat = position.coords.latitude;
+                    const userLon = position.coords.longitude;
+                    const userLocation = new google.maps.LatLng(userLat, userLon);
+                    map.setCenter(userLocation);
+
+                    // Marcador personalizado para la ubicación del usuario
+                    new google.maps.Marker({
+                        position: userLocation,
+                        map: map,
+                        title: "Tu ubicación",
+                        icon: {
+                            url: "1365700.png", // Icono personalizado del usuario
+                            scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
+                        }
+                    });
+
+                    loadCenters(map, userLat, userLon, infoWindow);
+                });
+            } else {
+                alert("La geolocalización no es compatible con este navegador.");
+            }
+        }
+
+        function loadCenters(map, userLat, userLon, infoWindow) {
+            database.ref().once('value').then(snapshot => {
+                const data = snapshot.val();
+                for (const key in data) {
+                    const center = data[key];
+                    const centerLat = center.Latitud;
+                    const centerLon = center.Longitud;
+                    const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
+
+                    if (distance <= 10) {
+                        const marker = new google.maps.Marker({
+                            position: { lat: centerLat, lng: centerLon },
+                            map: map,
+                            title: center.Administrador,
+                            icon: {
+                                url: "environment-15-512-_1_.png", // Icono personalizado para los centros de reciclaje
+                                scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
+                            }
+                        });
+
+                        marker.center = center;
+                        markers.push(marker);
+
+                        google.maps.event.addListener(marker, 'click', function() {
+                            const imageUrl = center.Foto && center.Foto.startsWith('http') 
+                                ? center.Foto 
+                                : '/placeholder.svg?height=200&width=300';
+                            const contentString = `
+                                <div>
+                                    <h3>${center.Administrador}</h3>
+                                    <p><strong>Dirección:</strong> ${center.Dirección}</p>
+                                    <img src="${imageUrl}" alt="Foto de ${center.Administrador}" style="width: 100%; max-width: 300px; height: auto; margin-top: 10px;" onerror="handleImageError(this)">
+                                </div>
+                            `;
+                            infoWindow.setContent(contentString);
+                            infoWindow.open(map, marker);
+                        });
+                    }
+                }
+            });
+        }
+
+        function applyFilter() {
+            const filter = document.getElementById('material-filter').value.toLowerCase();
+            markers.forEach(marker => {
+                const materials = (marker.center.Materiales || []).map(material => material.toLowerCase());
+                if (!filter || materials.includes(filter)) {
+                    marker.setVisible(true);
+                } else {
+                    marker.setVisible(false);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
