@@ -94,13 +94,6 @@
             height: auto;
             margin-top: 10px;
         }
-
-        /* Estilos para el contenedor de Street View */
-        .street-view-container {
-            width: 100%;
-            height: 300px;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
@@ -244,31 +237,7 @@
             const centersToShow = filteredCenters || allCenters;
 
             centersToShow.forEach(center => {
-                let iconUrl = "/images/reciclaje.png"; // Valor por defecto
-
-                // Asignar el ícono correcto según el material
-                switch (center.Material.toLowerCase()) {
-                    case 'vidrio':
-                        iconUrl = "/images/vidrio.png";
-                        break;
-                    case 'plástico':
-                        iconUrl = "/images/plastico.png";
-                        break;
-                    case 'papel':
-                        iconUrl = "/images/papel.png";
-                        break;
-                    case 'cartón':
-                        iconUrl = "/images/carton.png";
-                        break;
-                    case 'metal':
-                        iconUrl = "/images/metal.png";
-                        break;
-                    case 'celular':
-                        iconUrl = "/images/celular.png";
-                        break;
-                    default:
-                        iconUrl = "/images/reciclaje.png";
-                }
+                const iconUrl = "/images/environment-15-512-_1_.png"; // Ícono personalizado
 
                 const marker = new google.maps.Marker({
                     position: { lat: center.Latitud, lng: center.Longitud },
@@ -276,7 +245,7 @@
                     title: center.Administrador,
                     icon: {
                         url: iconUrl,
-                        scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado del ícono
+                        scaledSize: new google.maps.Size(30, 30) // Ajustamos el tamaño del ícono
                     }
                 });
 
@@ -284,29 +253,24 @@
                 markers.push(marker);
 
                 google.maps.event.addListener(marker, 'click', function() {
-                    // Crear contenedor para Street View
+                    const materialImage = center.Material.toLowerCase() + '.png'; // Ahora con .png
+
+                    // URL de la imagen de Street View
+                    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${center.Latitud},${center.Longitud}&fov=90&heading=235&pitch=10&key=AIzaSyAnxTkObM1_BkilYVkGjUv6CdYK5IOgkHw`;
+
                     const contentString = `
                         <div>
                             <h3>${center.Administrador}</h3>
                             <p><strong>Dirección:</strong> ${center.Dirección}</p>
                             <p><strong>Material:</strong> ${center.Material}</p>
-                            <img src="/images/${center.Material.toLowerCase()}.png" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
+                            <img src="/images/${materialImage}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
                             <h4>Vista en 360 grados:</h4>
-                            <div id="street-view" class="street-view-container"></div>
+                            <img src="${streetViewUrl}" alt="Street View de ${center.Administrador}" style="width: 100%; max-width: 600px; height: auto; margin-top: 10px;">
                         </div>
                     `;
 
                     infoWindow.setContent(contentString);
                     infoWindow.open(map, marker);
-
-                    // Crear el panorama interactivo dentro del InfoWindow
-                    const panorama = new google.maps.StreetViewPanorama(
-                        document.getElementById('street-view'), {
-                            position: { lat: center.Latitud, lng: center.Longitud },
-                            pov: { heading: 165, pitch: 0 },
-                            zoom: 1
-                        }
-                    );
                 });
             });
         }
