@@ -13,6 +13,101 @@
             overflow-x: hidden;
         }
 
+        /* Estilo para el encabezado y barra de navegación */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            background-color: #2e7d32;
+            color: #ffffff;
+            position: relative;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        /* Estilo para el formulario de inicio de sesión */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: none; /* Inicialmente oculto */
+            z-index: 1000;
+        }
+
+        .login-container input {
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .login-container button {
+            padding: 8px;
+            background-color: #43a047;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .login-container button:hover {
+            background-color: #388e3c;
+        }
+
+        /* Filtro de materiales */
+        .filter-container {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            max-width: 90%;
+            width: 300px; /* Aseguramos que tenga un tamaño adecuado en móviles */
+        }
+
+        .filter-container select, .filter-container button {
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        .filter-container button {
+            background-color: #43a047;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .filter-container button:hover {
+            background-color: #388e3c;
+        }
+
         #map {
             height: 70vh;
             width: 100%;
@@ -43,9 +138,86 @@
             margin-top: 10px;
         }
 
+        /* Estilos responsive para dispositivos móviles */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: center;
+                padding: 15px;
+            }
+
+            .login-container {
+                width: 90%;
+                position: static;
+                margin: 10px auto;
+                padding: 15px;
+                display: block; /* Hacer visible el login en móviles */
+            }
+
+            .login-container input,
+            .login-container button {
+                width: 100%;
+                margin: 8px 0;
+            }
+
+            /* El filtro ahora se coloca debajo del formulario en móviles */
+            .filter-container {
+                position: static;
+                margin-top: 20px;
+                width: 90%;
+                left: auto;
+                transform: none;
+                padding: 15px;
+                box-sizing: border-box;
+                max-width: 400px;
+            }
+
+            #map {
+                height: 60vh;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 20px;
+            }
+
+            .login-container input,
+            .login-container button {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div style="display: flex; align-items: center;">
+            <img src="/images/logo.png" alt="Logo de RecyClac" class="logo">
+            <h1>RecyClac</h1>
+        </div>
+
+        <!-- Formulario de inicio de sesión, se muestra en móviles y en escritorio se coloca a la derecha -->
+        <div class="login-container" id="login-container">
+            <input type="email" id="email" placeholder="Correo electrónico" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button onclick="login()">Iniciar sesión</button>
+        </div>
+    </div>
+
+    <div id="filter-container" class="filter-container">
+        <select id="material-filter" onchange="applyFilter()">
+            <option value="">Filtrar por material</option>
+            <option value="vidrio">Vidrio</option>
+            <option value="plástico">Plástico</option>
+            <option value="papel">Papel</option>
+            <option value="cartón">Cartón</option>
+            <option value="metal">Metal</option>
+            <option value="celular">Celular</option>
+            <option value="pilas">Pilas</option>
+        </select>
+        <button onclick="applyFilter()">Aplicar filtro</button>
+    </div>
+
     <div id="map"></div>
 
     <div id="nearby-centers" class="center-info" style="display: none;">
@@ -71,28 +243,29 @@
         };
 
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const database = firebase.database();
 
         let markers = [];
         let allCenters = [];
         let map;
+        let infoWindow;
         let userLat, userLon;
+        let streetViewPanorama;
 
-        // Función para inicializar el mapa
         function initMap() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     userLat = position.coords.latitude;
                     userLon = position.coords.longitude;
-                    console.log("Ubicación del usuario:", userLat, userLon);
 
-                    // Inicializamos el mapa
                     map = new google.maps.Map(document.getElementById('map'), {
                         zoom: 13,
                         center: { lat: userLat, lng: userLon }
                     });
 
-                    // Marcador de la ubicación del usuario
+                    infoWindow = new google.maps.InfoWindow();
+
                     const userMarker = new google.maps.Marker({
                         position: { lat: userLat, lng: userLon },
                         map: map,
@@ -102,33 +275,37 @@
                         }
                     });
 
-                    // Cargar los centros de reciclaje
-                    loadCenters(userLat, userLon);
+                    loadCenters(userLat, userLon); // Cargar centros al iniciar el mapa
                 });
-            } else {
-                console.log("La geolocalización no está disponible en este navegador.");
             }
         }
 
-        // Función para cargar los centros desde Firebase
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            auth.signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    alert('Bienvenido');
+                    document.getElementById('login-container').style.display = 'none'; // Ocultar el login al iniciar sesión
+                })
+                .catch(error => {
+                    alert('Error al iniciar sesión: ' + error.message);
+                });
+        }
+
         function loadCenters(userLat, userLon) {
-            console.log("Cargando centros de reciclaje...");
-            const centersRef = database.ref('centros_recoleccion');
-            centersRef.once('value', function(snapshot) {
+            database.ref().once('value').then(snapshot => {
                 const data = snapshot.val();
                 if (data) {
                     allCenters = [];
                     const centersWithDistance = [];
 
-                    // Procesar cada centro
                     for (const key in data) {
                         const center = data[key];
-                        console.log("Centro cargado:", center);
-
                         const centerLat = center.Latitud;
                         const centerLon = center.Longitud;
                         const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
-                        console.log("Distancia al centro:", center.name, distance);
 
                         centersWithDistance.push({
                             center,
@@ -136,51 +313,94 @@
                         });
                     }
 
-                    // Ordenar centros por distancia
                     centersWithDistance.sort((a, b) => a.distance - b.distance);
 
-                    // Mostrar los 3 centros más cercanos
                     const centerList = document.getElementById('center-list');
-                    centerList.innerHTML = "";  // Limpiar la lista
+                    for (let i = 0; i < 3; i++) {
+                        if (centersWithDistance[i]) {
+                            const center = centersWithDistance[i].center;
+                            const distance = centersWithDistance[i].distance;
 
-                    centersWithDistance.slice(0, 3).forEach(function(item) {
-                        const center = item.center;
-                        const distance = item.distance;
-
-                        const li = document.createElement('li');
-                        li.innerHTML = `<strong>${center.Administrador}</strong><br>Dirección: ${center.Dirección} <span class="distance">(${distance.toFixed(2)} km)</span>`;
-                        centerList.appendChild(li);
-
-                        // Crear el marcador para este centro
-                        const marker = new google.maps.Marker({
-                            position: { lat: center.Latitud, lng: center.Longitud },
-                            map: map,
-                            title: center.Administrador,
-                            icon: {
-                                url: "/images/environment-15-512-_1_.png",
-                                scaledSize: new google.maps.Size(30, 30)
-                            }
-                        });
-                        markers.push(marker);
-                    });
+                            const li = document.createElement('li');
+                            li.innerHTML = ${center.Administrador} - ${center.Dirección} <span class="distance">(${distance.toFixed(2)} km)</span>;
+                            centerList.appendChild(li);
+                        }
+                    }
 
                     document.getElementById('nearby-centers').style.display = 'block';
+                    allCenters = centersWithDistance.map(item => item.center);
+                    updateMarkers();
                 }
             });
         }
 
-        // Función para calcular la distancia entre dos puntos (en km)
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radio de la Tierra en km
+            const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c; // Distancia en km
+            return R * c;
         }
 
+        function updateMarkers(filteredCenters = null) {
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+
+            const centersToShow = filteredCenters || allCenters;
+
+            centersToShow.forEach(center => {
+                const iconUrl = "/images/environment-15-512-_1_.png";
+
+                const marker = new google.maps.Marker({
+                    position: { lat: center.Latitud, lng: center.Longitud },
+                    map: map,
+                    title: center.Administrador,
+                    icon: {
+                        url: iconUrl,
+                        scaledSize: new google.maps.Size(30, 30)
+                    }
+                });
+
+                marker.center = center;
+                markers.push(marker);
+
+                google.maps.event.addListener(marker, 'click', function() {
+                    const materialImage = center.Material.toLowerCase() + '.png';
+                    const contentString = 
+                        <div>
+                            <h3>${center.Administrador}</h3>
+                            <p><strong>Dirección:</strong> ${center.Dirección}</p>
+                            <p><strong>Material:</strong> ${center.Material}</p>
+                            <img src="/images/${materialImage}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
+                            <h4>Vista en 360 grados:</h4>
+                            <div id="street-view-container"></div>
+                        </div>
+                    ;
+                    infoWindow.setContent(contentString);
+                    infoWindow.open(map, marker);
+
+                    streetViewPanorama = new google.maps.StreetViewPanorama(
+                        document.getElementById('street-view-container'),
+                        {
+                            position: { lat: center.Latitud, lng: center.Longitud },
+                            pov: { heading: 165, pitch: 0 },
+                            zoom: 1
+                        }
+                    );
+                });
+            });
+        }
+
+        function applyFilter() {
+            const materialFilter = document.getElementById('material-filter').value.toLowerCase();
+            const filteredCenters = allCenters.filter(center => {
+                return materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
+            });
+            updateMarkers(filteredCenters);
+        }
     </script>
 </body>
 </html>
