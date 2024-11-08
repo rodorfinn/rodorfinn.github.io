@@ -80,7 +80,7 @@
 <body>
     <!-- Encabezado con logo y título -->
     <div class="header">
-        <img src="images/_0ec2eef9-a8db-4aa1-98a0-1f93ec925607.jpg" alt="Logo de RecyClac" class="logo">
+        <img src="images/logo.jpg" alt="Logo de RecyClac" class="logo">
         <h1>RecyClac</h1>
     </div>
 
@@ -136,7 +136,7 @@
 
         function handleImageError(img) {
             img.onerror = null;
-            img.src = 'images/placeholder.svg?height=200&width=300'; // Imagen de respaldo
+            img.src = '/placeholder.svg?height=200&width=300';
         }
 
         function initMap() {
@@ -156,7 +156,7 @@
                         map: map,
                         title: "Tu ubicación",
                         icon: {
-                            url: "images/1365700.png", // Icono personalizado del usuario
+                            url: "1365700.png", // Icono personalizado del usuario
                             scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
                         }
                     });
@@ -183,7 +183,7 @@
                             map: map,
                             title: center.Administrador,
                             icon: {
-                                url: "images/environment-15-512-_1_.png", // Icono personalizado para los centros de reciclaje
+                                url: "environment-15-512-_1_.png", // Icono personalizado para los centros de reciclaje
                                 scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
                             }
                         });
@@ -194,8 +194,8 @@
                         google.maps.event.addListener(marker, 'click', function() {
                             const imageUrl = center.Foto && center.Foto.startsWith('http') 
                                 ? center.Foto 
-                                : 'images/placeholder.svg?height=200&width=300';
-                            const contentString = `
+                                : '/placeholder.svg?height=200&width=300';
+                            const contentString = ` 
                                 <div>
                                     <h3>${center.Administrador}</h3>
                                     <p><strong>Dirección:</strong> ${center.Dirección}</p>
