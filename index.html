@@ -8,62 +8,56 @@
         body, html {
             margin: 0;
             padding: 0;
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             background-color: #e8f5e9;
-            box-sizing: border-box;
         }
 
         .header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 15px 20px;
+            padding: 10px 20px;
             background-color: #2e7d32;
-            color: white;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: #ffffff;
         }
 
         .logo {
-            width: 60px;
-            height: 60px;
-            margin-right: 15px;
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
         }
 
         h1 {
             margin: 0;
-            font-size: 26px;
-            font-weight: bold;
+            font-size: 24px;
         }
 
         .filter-container {
             position: absolute;
-            top: 80px;
+            top: 70px;
             left: 50%;
             transform: translateX(-50%);
-            background: #ffffff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             display: flex;
-            gap: 10px;
+            gap: 5px;
             align-items: center;
-            z-index: 100;
         }
 
         .filter-container select, .filter-container button {
-            padding: 12px 18px;
+            padding: 8px;
             font-size: 16px;
-            border-radius: 8px;
             border: 1px solid #ccc;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
+            border-radius: 4px;
         }
 
         .filter-container button {
             background-color: #43a047;
             color: white;
             border: none;
-            transition: background-color 0.3s;
+            cursor: pointer;
         }
 
         .filter-container button:hover {
@@ -77,33 +71,21 @@
 
         .center-info {
             margin: 20px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .center-info h2 {
-            margin-top: 0;
-            color: #2e7d32;
         }
 
         .center-list {
             list-style: none;
             padding-left: 0;
-            margin-top: 10px;
         }
 
         .center-list li {
-            padding: 8px;
+            padding: 5px;
             font-size: 16px;
-            border-bottom: 1px solid #eee;
-            color: #333;
         }
 
         .distance {
             font-size: 14px;
-            color: #777;
+            color: #666;
         }
 
         .info-window img {
@@ -111,27 +93,6 @@
             max-width: 200px;
             height: auto;
             margin-top: 10px;
-        }
-
-        /* Estilo responsive para pantallas más pequeñas */
-        @media screen and (max-width: 768px) {
-            .filter-container {
-                flex-direction: column;
-                width: 90%;
-            }
-
-            .header {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .logo {
-                margin-bottom: 10px;
-            }
-
-            h1 {
-                font-size: 22px;
-            }
         }
     </style>
 </head>
@@ -293,12 +254,18 @@
 
                 google.maps.event.addListener(marker, 'click', function() {
                     const materialImage = center.Material.toLowerCase() + '.png'; // Ahora con .png
+
+                    // URL de la imagen de Street View
+                    const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${center.Latitud},${center.Longitud}&fov=90&heading=235&pitch=10&key=AIzaSyAnxTkObM1_BkilYVkGjUv6CdYK5IOgkHw`;
+
                     const contentString = `
                         <div>
                             <h3>${center.Administrador}</h3>
                             <p><strong>Dirección:</strong> ${center.Dirección}</p>
                             <p><strong>Material:</strong> ${center.Material}</p>
                             <img src="/images/${materialImage}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
+                            <h4>Vista en 360 grados:</h4>
+                            <img src="${streetViewUrl}" alt="Street View de ${center.Administrador}" style="width: 100%; max-width: 600px; height: auto; margin-top: 10px;">
                         </div>
                     `;
 
