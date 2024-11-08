@@ -73,12 +73,6 @@
             margin: 20px;
         }
 
-        .error-message {
-            color: red;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
         .center-list {
             list-style: none;
             padding-left: 0;
@@ -235,17 +229,20 @@
             return R * c; // Distancia en km
         }
 
-        function updateMarkers() {
+        function updateMarkers(filteredCenters = null) {
             markers.forEach(marker => marker.setMap(null)); // Borrar marcadores anteriores
             markers = [];
 
-            allCenters.forEach(center => {
+            // Si no hay filtro, mostrar todos los centros; si hay filtro, mostrar solo los filtrados
+            const centersToDisplay = filteredCenters || allCenters;
+
+            centersToDisplay.forEach(center => {
                 const marker = new google.maps.Marker({
                     position: { lat: center.Latitud, lng: center.Longitud },
                     map: map,
                     title: center.Administrador,
                     icon: {
-                        url: "/images/environment-15-512-_1_.png", 
+                        url: "/images/reciclaje.png", // Imagen por defecto
                         scaledSize: new google.maps.Size(30, 30)
                     }
                 });
@@ -254,10 +251,11 @@
                 markers.push(marker);
 
                 google.maps.event.addListener(marker, 'click', function() {
-                    let imageUrl = "/images/reciclaje.png"; // Default image
+                    let imageUrl = "/images/reciclaje.png"; // Imagen por defecto
 
+                    // Ajustar imagen según el material
                     if (center.Material.includes('celular')) {
-                        imageUrl = "/images/celular.png";
+                        imageUrl = "/images/celular.png"; // Imagen para celulares
                     } else if (center.Material === 'Vidrio') {
                         imageUrl = "/images/vidrio.png";
                     } else if (center.Material === 'Plástico') {
