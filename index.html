@@ -223,7 +223,7 @@
 
         // Calcula la distancia entre dos puntos geográficos
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radio de la tierra en km
+            const R = 6371; // Radio de la Tierra en km
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -301,7 +301,9 @@
                             google.maps.event.addListener(marker, 'click', function() {
                                 // Verificamos qué imagen mostrar según el tipo de material
                                 let imageUrl;
-                                if (center.Material === 'Vidrio') {
+                                if (center.Material.includes(',')) {  // Si el centro maneja varios materiales
+                                    imageUrl = "/images/reciclaje.png";  // Imagen de reciclaje
+                                } else if (center.Material === 'Vidrio') {
                                     imageUrl = "/images/vidrio.png";
                                 } else if (center.Material === 'Plástico') {
                                     imageUrl = "/images/plastico.png";
