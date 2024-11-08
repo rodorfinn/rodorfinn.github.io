@@ -65,8 +65,8 @@
             background-color: #388e3c;
         }
 
-        /* Contenedor de la barra de búsqueda */
-        .search-bar-container {
+        /* Contenedor del filtro de materiales */
+        .filter-container {
             position: absolute;
             top: 70px;
             left: 50%;
@@ -81,21 +81,21 @@
             align-items: center;
         }
 
-        .search-bar-container input, .search-bar-container select, .search-bar-container button {
+        .filter-container select, .filter-container button {
             padding: 8px;
             font-size: 16px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
 
-        .search-bar-container button {
+        .filter-container button {
             background-color: #43a047; /* Botón verde */
             color: white;
             border: none;
             cursor: pointer;
         }
 
-        .search-bar-container button:hover {
+        .filter-container button:hover {
             background-color: #388e3c; /* Más oscuro al pasar el ratón */
         }
 
@@ -139,9 +139,8 @@
         <div id="register-error-message" class="error-message"></div>
     </div>
 
-    <!-- Barra de búsqueda y filtro -->
-    <div id="search-bar-container" class="search-bar-container" style="display: none;">
-        <input type="text" id="search-bar" placeholder="Buscar centro de reciclaje..." oninput="applyFilter()">
+    <!-- Filtro por material -->
+    <div id="filter-container" class="filter-container" style="display: none;">
         <select id="material-filter" onchange="applyFilter()">
             <option value="">Todos los materiales</option>
             <option value="vidrio">Vidrio</option>
@@ -152,7 +151,7 @@
             <option value="celular">Celular</option>
             <option value="pilas">Pilas</option>
         </select>
-        <button onclick="applyFilter()">Buscar</button>
+        <button onclick="applyFilter()">Filtrar</button>
     </div>
 
     <div id="map"></div>
@@ -201,7 +200,7 @@
             auth.signInWithEmailAndPassword(email, password)
                 .then(() => {
                     document.getElementById('login-form').style.display = 'none';
-                    document.getElementById('search-bar-container').style.display = 'block'; // Muestra la barra de búsqueda
+                    document.getElementById('filter-container').style.display = 'block'; // Muestra el filtro
                     initMap(); // Inicia el mapa después de hacer login
                 })
                 .catch((error) => {
@@ -328,18 +327,13 @@
             return R * c; // Distancia en km
         }
 
-        // Aplicar filtro de búsqueda
+        // Aplicar filtro de materiales
         function applyFilter() {
-            const searchTerm = document.getElementById('search-bar').value.toLowerCase();
             const materialFilter = document.getElementById('material-filter').value.toLowerCase();
             
-            // Filtrar los centros que coincidan con el término de búsqueda y el material
+            // Filtrar los centros que coincidan con el material
             const filteredCenters = allCenters.filter(center => {
-                const matchesSearchTerm = center.Administrador.toLowerCase().includes(searchTerm) || 
-                                          center.Dirección.toLowerCase().includes(searchTerm);
-                const matchesMaterial = materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
-
-                return matchesSearchTerm && matchesMaterial;
+                return materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
             });
 
             // Borrar los marcadores actuales
