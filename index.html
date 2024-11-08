@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RecyClac</title>
     <style>
+        /* Estilos previos */
         body, html {
             margin: 0;
             padding: 0;
@@ -31,6 +32,7 @@
             font-size: 24px;
         }
 
+        /* Para el filtro */
         .filter-container {
             position: absolute;
             top: 70px;
@@ -64,6 +66,7 @@
             background-color: #388e3c;
         }
 
+        /* Estilos para el mapa */
         #map {
             height: 80vh;
             width: 100%;
@@ -88,10 +91,10 @@
             color: #666;
         }
 
-        .info-window img {
+        /* Estilo para el visor de Street View */
+        #street-view-container {
             width: 100%;
-            max-width: 200px;
-            height: auto;
+            height: 400px; /* Ajustar el tamaño */
             margin-top: 10px;
         }
     </style>
@@ -123,6 +126,9 @@
         <ul id="center-list" class="center-list"></ul>
     </div>
 
+    <!-- Contenedor para Street View -->
+    <div id="street-view-container"></div>
+
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-database.js"></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDTPwPwaQEFcpKg0aBWVEeWmcz_xIXXZug&callback=initMap" async defer></script>
@@ -146,6 +152,7 @@
         let map;
         let infoWindow;
         let userLat, userLon;
+        let streetViewPanorama;
 
         function initMap() {
             if (navigator.geolocation) {
@@ -258,19 +265,23 @@
                     // URL de la imagen de Street View
                     const streetViewUrl = `https://maps.googleapis.com/maps/api/streetview?size=600x300&location=${center.Latitud},${center.Longitud}&fov=90&heading=235&pitch=10&key=AIzaSyAnxTkObM1_BkilYVkGjUv6CdYK5IOgkHw`;
 
-                    const contentString = `
-                        <div>
-                            <h3>${center.Administrador}</h3>
-                            <p><strong>Dirección:</strong> ${center.Dirección}</p>
-                            <p><strong>Material:</strong> ${center.Material}</p>
-                            <img src="/images/${materialImage}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
-                            <h4>Vista en 360 grados:</h4>
-                            <img src="${streetViewUrl}" alt="Street View de ${center.Administrador}" style="width: 100%; max-width: 600px; height: auto; margin-top: 10px;">
-                        </div>
-                    `;
+                    // Crear el Street View interactivo
+                    if (!streetViewPanorama) {
+                        streetViewPanorama = new google.maps.StreetViewPanorama(
+                            document.getElementById('street-view-container'),
+                            {
+                                position: { lat: center.Latitud, lng: center.Longitud },
+                                pov: {
+                                    heading: 165,  // Dirección hacia la que mira
+                                    pitch: 0      // Ángulo hacia arriba o abajo
+                                },
+                                zoom: 1
+                            }
+                        );
+                    }
 
-                    infoWindow.setContent(contentString);
-                    infoWindow.open(map, marker);
+                    // Cambiar la posición del Street View
+                    streetViewPanorama.setPosition({ lat: center.Latitud, lng: center.Longitud });
                 });
             });
         }
