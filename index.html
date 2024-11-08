@@ -233,17 +233,43 @@
             markers.forEach(marker => marker.setMap(null)); // Borrar marcadores anteriores
             markers = [];
 
-            // Si no hay filtro, mostrar todos los centros; si hay filtro, mostrar solo los filtrados
-            const centersToDisplay = filteredCenters || allCenters;
+            // Si no hay filtro, mostramos todos los centros
+            const centersToShow = filteredCenters || allCenters;
 
-            centersToDisplay.forEach(center => {
+            centersToShow.forEach(center => {
+                let iconUrl = "/images/reciclaje.png"; // Valor por defecto
+
+                // Asignar el ícono correcto según el material
+                switch (center.Material.toLowerCase()) {
+                    case 'vidrio':
+                        iconUrl = "/images/vidrio.png";
+                        break;
+                    case 'plástico':
+                        iconUrl = "/images/plastico.png";
+                        break;
+                    case 'papel':
+                        iconUrl = "/images/papel.png";
+                        break;
+                    case 'cartón':
+                        iconUrl = "/images/carton.png";
+                        break;
+                    case 'metal':
+                        iconUrl = "/images/metal.png";
+                        break;
+                    case 'celular':
+                        iconUrl = "/images/celular.png";
+                        break;
+                    default:
+                        iconUrl = "/images/reciclaje.png";
+                }
+
                 const marker = new google.maps.Marker({
                     position: { lat: center.Latitud, lng: center.Longitud },
                     map: map,
                     title: center.Administrador,
                     icon: {
-                        url: "/images/reciclaje.png", // Imagen por defecto
-                        scaledSize: new google.maps.Size(30, 30)
+                        url: iconUrl,
+                        scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado del ícono
                     }
                 });
 
@@ -251,30 +277,15 @@
                 markers.push(marker);
 
                 google.maps.event.addListener(marker, 'click', function() {
-                    let imageUrl = "/images/reciclaje.png"; // Imagen por defecto
-
-                    // Ajustar imagen según el material
-                    if (center.Material.includes('celular')) {
-                        imageUrl = "/images/celular.png"; // Imagen para celulares
-                    } else if (center.Material === 'Vidrio') {
-                        imageUrl = "/images/vidrio.png";
-                    } else if (center.Material === 'Plástico') {
-                        imageUrl = "/images/plastico.png";
-                    } else if (center.Material === 'Papel') {
-                        imageUrl = "/images/papel.png";
-                    } else if (center.Material === 'Metal') {
-                        imageUrl = "/images/metal.png";
-                    }
-
                     const contentString = `
                         <div>
                             <h3>${center.Administrador}</h3>
                             <p><strong>Dirección:</strong> ${center.Dirección}</p>
                             <p><strong>Material:</strong> ${center.Material}</p>
-                            <img src="${imageUrl}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;" onerror="handleImageError(this)">
+                            <img src="${iconUrl}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
                         </div>
                     `;
-                    
+
                     infoWindow.setContent(contentString);
                     infoWindow.open(map, marker);
                 });
@@ -291,11 +302,6 @@
 
             // Actualizar los marcadores después de filtrar
             updateMarkers(filteredCenters);
-        }
-
-        function handleImageError(image) {
-            image.onerror = null;
-            image.src = '/images/placeholder.png';
         }
     </script>
 </body>
