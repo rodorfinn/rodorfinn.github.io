@@ -232,98 +232,102 @@
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
+            return R * c; // Devuelve la distancia en km
         }
 
-        function handleImageError(img) {
-            img.onerror = null;
-            img.src = '/images/placeholder.svg?height=200&width=300';
-        }
-
+        // Inicializa el mapa
         function initMap() {
-            const map = new google.maps.Map(document.getElementById("map"), { zoom: 12 });
+            const mapOptions = {
+                center: { lat: -33.4489, lng: -70.6693 }, // Coordenadas iniciales
+                zoom: 12,
+            };
+
+            const map = new google.maps.Map(document.getElementById('map'), mapOptions);
             const infoWindow = new google.maps.InfoWindow();
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     const userLat = position.coords.latitude;
                     const userLon = position.coords.longitude;
-                    const userLocation = new google.maps.LatLng(userLat, userLon);
-                    map.setCenter(userLocation);
 
-                    // Marcador personalizado para la ubicación del usuario
-                    new google.maps.Marker({
-                        position: userLocation,
-                        map: map,
-                        title: "Tu ubicación",
-                        icon: {
-                            url: "/images/1365700.png", // Icono personalizado del usuario
-                            scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
-                        }
-                    });
+                    map.setCenter({ lat: userLat, lng: userLon });
 
+                    // Cargar los centros de reciclaje
                     loadCenters(map, userLat, userLon, infoWindow);
                 });
             } else {
-                alert("La geolocalización no es compatible con este navegador.");
+                alert("La geolocalización no está disponible.");
             }
         }
 
+        // Carga los centros desde Firebase
         function loadCenters(map, userLat, userLon, infoWindow) {
             database.ref().once('value').then(snapshot => {
-                const data = snapshot.val();
-                for (const key in data) {
-                    const center = data[key];
-                    const centerLat = center.Latitud;
-                    const centerLon = center.Longitud;
-                    const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
+                const data = snapshot.val();  // Obtenemos todos los centros
+                if (data) {
+                    for (const key in data) {
+                        const center = data[key];
+                        const centerLat = center.Latitud;
+                        const centerLon = center.Longitud;
+                        const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
-                    if (distance <= 10) {
-                        const marker = new google.maps.Marker({
-                            position: { lat: centerLat, lng: centerLon },
-                            map: map,
-                            title: center.Administrador,
-                            icon: {
-                                url: "/images/environment-15-512-_1_.png", // Icono personalizado
-                                scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
-                            }
-                        });
+                        if (distance <= 10) {  // Solo muestra los centros dentro de 10 km
+                            const marker = new google.maps.Marker({
+                                position: { lat: centerLat, lng: centerLon },
+                                map: map,
+                                title: center.Administrador,
+                                icon: {
+                                    url: "/images/environment-15-512-_1_.png", // Icono personalizado
+                                    scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
+                                }
+                            });
 
-                        marker.center = center;
-                        markers.push(marker);
+                            marker.center = center;
+                            markers.push(marker);
 
-                        google.maps.event.addListener(marker, 'click', function() {
-                            const imageUrl = center.Foto && center.Foto.startsWith('http') 
-                                ? center.Foto 
-                                : `/images/${center.Foto || 'placeholder.svg'}`;
-                            const contentString = ` 
-                                <div>
-                                    <h3>${center.Administrador}</h3>
-                                    <p><strong>Dirección:</strong> ${center.Dirección}</p>
-                                    <img src="${imageUrl}" alt="Foto de ${center.Administrador}" style="width: 100%; max-width: 300px; height: auto; margin-top: 10px;" onerror="handleImageError(this)">
-                                </div>
-                            `;
-                            infoWindow.setContent(contentString);
-                            infoWindow.open(map, marker);
-                        });
+                            google.maps.event.addListener(marker, 'click', function() {
+                                const imageUrl = center.Imagen && center.Imagen.startsWith('http') 
+                                    ? center.Imagen 
+                                    : `/images/${center.Imagen || 'placeholder.svg'}`;
+                                const contentString = ` 
+                                    <div>
+                                        <h3>${center.Administrador}</h3>
+                                        <p><strong>Dirección:</strong> ${center.Dirección}</p>
+                                        <p><strong>Material:</strong> ${center.Material}</p>
+                                        <img src="${imageUrl}" alt="Foto de ${center.Administrador}" style="width: 100%; max-width: 300px; height: auto; margin-top: 10px;" onerror="handleImageError(this)">
+                                    </div>
+                                `;
+                                infoWindow.setContent(contentString);
+                                infoWindow.open(map, marker);
+                            });
+                        }
                     }
+                } else {
+                    console.log('No se encontraron datos en Firebase.');
                 }
             });
         }
 
+        // Aplica el filtro de materiales
         function applyFilter() {
-            const filter = document.getElementById('material-filter').value.toLowerCase();
+            const filter = document.getElementById('material-filter').value.toLowerCase();  // Obtenemos el material seleccionado
             markers.forEach(marker => {
-                const materials = (marker.center.Materiales || []).map(material => material.toLowerCase());
-                if (!filter || materials.includes(filter)) {
+                const centerMaterial = marker.center.Material.toLowerCase();  // Material de ese centro
+                if (!filter || centerMaterial === filter) {  // Si no hay filtro o el material coincide
                     marker.setVisible(true);
                 } else {
                     marker.setVisible(false);
                 }
             });
+        }
+
+        // Manejo de errores al cargar imágenes
+        function handleImageError(image) {
+            image.onerror = null;
+            image.src = "/images/placeholder.svg"; // Imagen por defecto en caso de error
         }
     </script>
 </body>
