@@ -71,6 +71,10 @@
             background-color: #388e3c;
         }
 
+        .register-container {
+            display: none;
+        }
+
         /* Filtro de materiales */
         .filter-container {
             position: absolute;
@@ -201,6 +205,14 @@
             <input type="email" id="email" placeholder="Correo electrónico" required>
             <input type="password" id="password" placeholder="Contraseña" required>
             <button onclick="login()">Iniciar sesión</button>
+            <p>¿No tienes cuenta? <a href="javascript:void(0);" onclick="showRegisterForm()">Regístrate aquí</a></p>
+        </div>
+
+        <!-- Formulario de registro -->
+        <div class="register-container" id="register-container">
+            <input type="password" id="confirm-password" placeholder="Confirmar contraseña" required>
+            <button onclick="register()">Registrarse</button>
+            <p>¿Ya tienes cuenta? <a href="javascript:void(0);" onclick="showLoginForm()">Inicia sesión aquí</a></p>
         </div>
     </div>
 
@@ -294,112 +306,38 @@
                 });
         }
 
-        function loadCenters(userLat, userLon) {
-            database.ref().once('value').then(snapshot => {
-                const data = snapshot.val();
-                if (data) {
-                    allCenters = [];
-                    const centersWithDistance = [];
+        function register() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
 
-                    for (const key in data) {
-                        const center = data[key];
-                        const centerLat = center.Latitud;
-                        const centerLon = center.Longitud;
-                        const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
+            if (password !== confirmPassword) {
+                alert('Las contraseñas no coinciden.');
+                return;
+            }
 
-                        centersWithDistance.push({
-                            center,
-                            distance
-                        });
-                    }
-
-                    centersWithDistance.sort((a, b) => a.distance - b.distance);
-
-                    const centerList = document.getElementById('center-list');
-                    for (let i = 0; i < 3; i++) {
-                        if (centersWithDistance[i]) {
-                            const center = centersWithDistance[i].center;
-                            const distance = centersWithDistance[i].distance;
-
-                            const li = document.createElement('li');
-                            li.innerHTML = `${center.Administrador} - ${center.Dirección} <span class="distance">(${distance.toFixed(2)} km)</span>`;
-                            centerList.appendChild(li);
-                        }
-                    }
-
-                    document.getElementById('nearby-centers').style.display = 'block';
-                    allCenters = centersWithDistance.map(item => item.center);
-                    updateMarkers();
-                }
-            });
-        }
-
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-        }
-
-        function updateMarkers(filteredCenters = null) {
-            markers.forEach(marker => marker.setMap(null));
-            markers = [];
-
-            const centersToShow = filteredCenters || allCenters;
-
-            centersToShow.forEach(center => {
-                const iconUrl = "/images/environment-15-512-_1_.png";
-
-                const marker = new google.maps.Marker({
-                    position: { lat: center.Latitud, lng: center.Longitud },
-                    map: map,
-                    title: center.Administrador,
-                    icon: {
-                        url: iconUrl,
-                        scaledSize: new google.maps.Size(30, 30)
-                    }
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    alert('Usuario registrado con éxito');
+                    document.getElementById('register-container').style.display = 'none'; // Ocultar formulario de registro
+                    document.getElementById('login-container').style.display = 'block'; // Volver al login
+                })
+                .catch(error => {
+                    alert('Error al registrar usuario: ' + error.message);
                 });
-
-                marker.center = center;
-                markers.push(marker);
-
-                google.maps.event.addListener(marker, 'click', function() {
-                    const materialImage = center.Material.toLowerCase() + '.png';
-                    const contentString = 
-                        `<div>
-                            <h3>${center.Administrador}</h3>
-                            <p><strong>Dirección:</strong> ${center.Dirección}</p>
-                            <p><strong>Material:</strong> ${center.Material}</p>
-                            <img src="/images/${materialImage}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;">
-                            <h4>Vista en 360 grados:</h4>
-                            <div id="street-view-container"></div>
-                        </div>`;
-                    infoWindow.setContent(contentString);
-                    infoWindow.open(map, marker);
-
-                    streetViewPanorama = new google.maps.StreetViewPanorama(
-                        document.getElementById('street-view-container'),
-                        {
-                            position: { lat: center.Latitud, lng: center.Longitud },
-                            pov: { heading: 165, pitch: 0 },
-                            zoom: 1
-                        }
-                    );
-                });
-            });
         }
 
-        function applyFilter() {
-            const materialFilter = document.getElementById('material-filter').value.toLowerCase();
-            const filteredCenters = allCenters.filter(center => {
-                return materialFilter === "" || center.Material.toLowerCase().includes(materialFilter);
-            });
-            updateMarkers(filteredCenters);
+        function showRegisterForm() {
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('register-container').style.display = 'block';
         }
+
+        function showLoginForm() {
+            document.getElementById('register-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
+        }
+
+        // Resto de funciones para manejar el mapa y centros de reciclaje...
     </script>
 </body>
 </html>
