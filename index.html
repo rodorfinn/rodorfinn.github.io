@@ -80,7 +80,7 @@
 <body>
     <!-- Encabezado con logo y título -->
     <div class="header">
-        <img src="images/logo.png" alt="Logo de RecyClac" class="logo">
+        <img src="images/logo.jpg" alt="Logo de RecyClac" class="logo">
         <h1>RecyClac</h1>
     </div>
 
@@ -194,7 +194,7 @@
                         google.maps.event.addListener(marker, 'click', function() {
                             const imageUrl = center.Foto && center.Foto.startsWith('http') 
                                 ? center.Foto 
-                                : `/images/${center.Foto || 'placeholder.svg'}`; // Asegúrate de que las imágenes se encuentren en la carpeta "images"
+                                : '/placeholder.svg?height=200&width=300';
                             const contentString = ` 
                                 <div>
                                     <h3>${center.Administrador}</h3>
