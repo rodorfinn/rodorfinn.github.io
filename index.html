@@ -80,7 +80,7 @@
 <body>
     <!-- Encabezado con logo y título -->
     <div class="header">
-        <img src="images/logo.jpg" alt="Logo de RecyClac" class="logo">
+        <img src="/images/logo.png" alt="Logo de RecyClac" class="logo">
         <h1>RecyClac</h1>
     </div>
 
@@ -136,7 +136,7 @@
 
         function handleImageError(img) {
             img.onerror = null;
-            img.src = '/placeholder.svg?height=200&width=300';
+            img.src = '/images/placeholder.svg?height=200&width=300';
         }
 
         function initMap() {
@@ -156,7 +156,7 @@
                         map: map,
                         title: "Tu ubicación",
                         icon: {
-                            url: "1365700.png", // Icono personalizado del usuario
+                            url: "/images/1365700.png", // Icono personalizado del usuario
                             scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
                         }
                     });
@@ -171,6 +171,7 @@
         function loadCenters(map, userLat, userLon, infoWindow) {
             database.ref().once('value').then(snapshot => {
                 const data = snapshot.val();
+                console.log('Datos de los centros:', data); // Agregar esto para verificar si se cargan los datos
                 for (const key in data) {
                     const center = data[key];
                     const centerLat = center.Latitud;
@@ -178,12 +179,13 @@
                     const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
                     if (distance <= 10) {
+                        console.log('Marcador para', center.Administrador, 'con coordenadas', centerLat, centerLon); // Verificar coordenadas
                         const marker = new google.maps.Marker({
                             position: { lat: centerLat, lng: centerLon },
                             map: map,
                             title: center.Administrador,
                             icon: {
-                                url: "environment-15-512-_1_.png", // Icono personalizado para los centros de reciclaje
+                                url: "/images/environment-15-512-_1_.png", // Icono personalizado
                                 scaledSize: new google.maps.Size(30, 30) // Tamaño ajustado
                             }
                         });
@@ -194,7 +196,7 @@
                         google.maps.event.addListener(marker, 'click', function() {
                             const imageUrl = center.Foto && center.Foto.startsWith('http') 
                                 ? center.Foto 
-                                : '/placeholder.svg?height=200&width=300';
+                                : `/images/${center.Foto || 'placeholder.svg'}`;
                             const contentString = ` 
                                 <div>
                                     <h3>${center.Administrador}</h3>
