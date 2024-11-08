@@ -235,19 +235,16 @@
 
         // Inicializa el mapa
         function initMap() {
-            // Primero obtenemos la ubicación del usuario
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     const userLat = position.coords.latitude;
                     const userLon = position.coords.longitude;
 
-                    // Crea el mapa centrado en la ubicación del usuario
                     const map = new google.maps.Map(document.getElementById('map'), {
                         center: { lat: userLat, lng: userLon },
                         zoom: 12
                     });
 
-                    // Mapa de la ubicación del usuario
                     const userMarker = new google.maps.Marker({
                         position: { lat: userLat, lng: userLon },
                         map: map,
@@ -258,21 +255,13 @@
                     });
 
                     const infoWindow = new google.maps.InfoWindow();
-
-                    // Cargar los centros de reciclaje
-                    loadCenters(map, userLat, userLon, infoWindow);
-
-                }, function() {
-                    alert('Error al obtener la ubicación del usuario');
+                    loadCenters(map, userLat, userLon, infoWindow); // Cargar centros
                 });
-            } else {
-                alert('Geolocalización no soportada en este navegador.');
             }
         }
 
-        // Función para cargar los centros de reciclaje desde Firebase
+        // Cargar los centros de reciclaje desde Firebase
         function loadCenters(map, userLat, userLon, infoWindow) {
-            console.log('Cargando centros de reciclaje...');
             database.ref().once('value').then(snapshot => {
                 const data = snapshot.val();
                 if (data) {
@@ -282,15 +271,13 @@
                         const centerLon = center.Longitud;
                         const distance = calculateDistance(userLat, userLon, centerLat, centerLon);
 
-                        console.log(`Centro ${center.Administrador} a ${distance} km`);
-
-                        if (distance <= 10) {  // Solo muestra los centros dentro de 10 km
+                        if (distance <= 10) {
                             const marker = new google.maps.Marker({
                                 position: { lat: centerLat, lng: centerLon },
                                 map: map,
                                 title: center.Administrador,
                                 icon: {
-                                    url: "/images/environment-15-512-_1_.png",  // Icono para los centros de reciclaje
+                                    url: "/images/environment-15-512-_1_.png",  // Icono para los centros
                                     scaledSize: new google.maps.Size(30, 30)
                                 }
                             });
@@ -299,10 +286,13 @@
                             markers.push(marker);
 
                             google.maps.event.addListener(marker, 'click', function() {
-                                // Verificamos qué imagen mostrar según el tipo de material
                                 let imageUrl;
-                                if (center.Material.includes(',')) {  // Si el centro maneja varios materiales
-                                    imageUrl = "/images/reciclaje.png";  // Imagen de reciclaje
+
+                                // Verificar los materiales que acepta el centro
+                                if (center.Material.includes('celular')) {
+                                    imageUrl = "/images/celular.png";  // Imagen para celular
+                                } else if (center.Material.includes(',')) {
+                                    imageUrl = "/images/reciclaje.png";  // Variados materiales
                                 } else if (center.Material === 'Vidrio') {
                                     imageUrl = "/images/vidrio.png";
                                 } else if (center.Material === 'Plástico') {
@@ -312,16 +302,15 @@
                                 } else if (center.Material === 'Metal') {
                                     imageUrl = "/images/metal.png";
                                 } else {
-                                    imageUrl = "/images/placeholder.png"; // En caso de que no tenga imagen definida
+                                    imageUrl = "/images/placeholder.png"; // Imagen por defecto
                                 }
 
-                                // Crear el contenido del infowindow
                                 const contentString = `
                                     <div>
                                         <h3>${center.Administrador}</h3>
                                         <p><strong>Dirección:</strong> ${center.Dirección}</p>
                                         <p><strong>Material:</strong> ${center.Material}</p>
-                                        <img src="${imageUrl}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 300px; height: auto; margin-top: 10px;" onerror="handleImageError(this)">
+                                        <img src="${imageUrl}" alt="Imagen de ${center.Material}" style="width: 100%; max-width: 200px; height: auto; margin-top: 10px;" onerror="handleImageError(this)">
                                     </div>
                                 `;
                                 
@@ -330,37 +319,14 @@
                             });
                         }
                     }
-                } else {
-                    console.log('No se encontraron datos en Firebase.');
                 }
             });
         }
 
-        // Función para manejar errores de imágenes (si no se carga la imagen, mostrar una de reemplazo)
+        // Manejar errores de carga de imágenes
         function handleImageError(image) {
             image.onerror = null;
-            image.src = "/images/placeholder.png";  // Imagen de reemplazo en caso de error
-        }
-
-        // Función de búsqueda por material
-        function applyFilter() {
-            const filterValue = document.getElementById('material-filter').value;
-            const searchQuery = document.getElementById('search-bar').value.toLowerCase();
-
-            markers.forEach(marker => {
-                const center = marker.center;
-                const material = center.Material.toLowerCase();
-                const address = center.Dirección.toLowerCase();
-
-                if (
-                    (filterValue === "" || material.includes(filterValue)) &&
-                    (searchQuery === "" || address.includes(searchQuery))
-                ) {
-                    marker.setMap(map);
-                } else {
-                    marker.setMap(null);
-                }
-            });
+            image.src = "/images/placeholder.png"; // Imagen por defecto
         }
     </script>
 </body>
